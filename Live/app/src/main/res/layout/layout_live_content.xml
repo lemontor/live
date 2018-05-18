@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <include
+        android:id="@+id/line"
+        layout="@layout/layout_line"/>
+    <ListView
+        android:id="@+id/lv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/line"
+        android:layout_above="@+id/layout">
+    </ListView>
+
+    <include
+        layout="@layout/layout_live_empty"/>
+
+
+
+    <LinearLayout
+        android:id="@+id/layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:background="#EBF9ED"
+        android:paddingLeft="@dimen/dimen_60"
+        android:paddingTop="@dimen/dimen_14"
+        android:paddingBottom="@dimen/dimen_14"
+        android:paddingRight="@dimen/dimen_64"
+        android:minHeight="@dimen/dimen_100">
+        <EditText
+            android:id="@+id/edt_content"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_content_edt"
+            android:textColor="@color/color_666666"
+            android:textSize="@dimen/text_size_32"
+            android:textColorHint="@color/color_999999"
+            android:hint="我来说一下"
+            android:paddingLeft="@dimen/dimen_10"
+            android:minHeight="@dimen/dimen_70"
+            />
+
+        <TextView
+            android:id="@+id/tv_send"
+            android:layout_width="@dimen/dimen_110"
+            android:layout_height="@dimen/dimen_70"
+            android:gravity="center"
+            android:text="发送"
+            android:textSize="@dimen/text_size_32"
+            android:textColor="@android:color/white"
+            android:background="@drawable/bg_content_btn"
+            android:layout_marginLeft="@dimen/dimen_20"
+            android:layout_gravity="bottom"
+            />
+
+    </LinearLayout>
+
+
+
+
+</RelativeLayout>
