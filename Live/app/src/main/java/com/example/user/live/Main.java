@@ -20,7 +20,7 @@ public class Main extends AppCompatActivity {
     private VideoFragment videoFragment;
     private FragmentManager fragmentManager;
     private Fragment curFragment = new Fragment();
-    private RadioGroup mRgMain;
+//    private RadioGroup mRgMain;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,16 +33,16 @@ public class Main extends AppCompatActivity {
     }
 
     private void initListener() {
-        mRgMain.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup radioGroup, int i) {
-                if (radioGroup.getCheckedRadioButtonId() == R.id.rb_live) {
-                    showFragment(liveFragment);
-                } else {
-                    showFragment(videoFragment);
-                }
-            }
-        });
+//        mRgMain.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+//                if (radioGroup.getCheckedRadioButtonId() == R.id.rb_live) {
+//                    showFragment(liveFragment);
+//                } else {
+//                    showFragment(videoFragment);
+//                }
+//            }
+//        });
     }
 
     private void initObj() {
@@ -52,7 +52,7 @@ public class Main extends AppCompatActivity {
     }
 
     private void initUI() {
-        mRgMain = (RadioGroup) findViewById(R.id.rg_bottom);
+//        mRgMain = (RadioGroup) findViewById(R.id.rg_bottom);
     }
 
     private void showFragment(Fragment fragment) {

@@ -4,35 +4,74 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <include
-        android:id="@+id/bar"
-        layout="@layout/layout_action_bar"/>
     <ListView
         android:id="@+id/lv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:divider="@color/color_dddddd"
         android:dividerHeight="@dimen/dimen_1"
-        android:layout_below="@+id/bar">
+        android:layout_above="@+id/line_bottom"
+        >
     </ListView>
     <include
         android:id="@+id/layout_empty"
         layout="@layout/layout_live_empty"/>
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/floatingActionButton"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        app:borderWidth="0dp"
-        app:backgroundTint="#FF4011"
-        app:rippleColor="#33728dff"
-        app:elevation="8dp"
-        app:pressedTranslationZ="16dp"
-        android:layout_marginRight="@dimen/dimen_20"
-        android:layout_marginBottom="@dimen/dimen_20"
-        />
+    <LinearLayout
+        android:id="@+id/line_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dimen_100"
+        android:orientation="horizontal"
+        android:background="@color/color_34A446"
+        android:layout_alignParentBottom="true">
+        <LinearLayout
+            android:id="@+id/layout_list"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/tv_list"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/text_size_32"
+                android:drawableLeft="@mipmap/spsc_renwuliebiao"
+                android:text="任务列表"
+                android:drawablePadding="@dimen/dimen_14"
+                android:gravity="center"
+                />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="@dimen/dimen_80"
+            android:background="@android:color/white"
+            android:layout_gravity="center_vertical"/>
+
+    <LinearLayout
+        android:id="@+id/layout_up"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+        <TextView
+            android:id="@+id/tv_up"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/text_size_32"
+            android:text="上传视频"
+            android:gravity="center"
+            android:drawablePadding="@dimen/dimen_14"
+            android:drawableLeft="@mipmap/spsc_shangchuanshipin"
+            />
+    </LinearLayout>
+    </LinearLayout>
+   
+        
 
 
 </RelativeLayout>

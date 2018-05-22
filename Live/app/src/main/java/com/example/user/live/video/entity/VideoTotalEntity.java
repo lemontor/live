@@ -9,7 +9,15 @@ public class VideoTotalEntity {
 
     private  String title;
     private  List<VideoEntity>  videoEntities;
+    private  boolean  isChose;
 
+    public boolean isChose() {
+        return isChose;
+    }
+
+    public void setChose(boolean chose) {
+        isChose = chose;
+    }
 
     public VideoTotalEntity() {
     }

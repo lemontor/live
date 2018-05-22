@@ -9,12 +9,12 @@ import java.util.Comparator;
 public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
     private String  title;
     private String  path;
-    private int duration;
+    private String duration;
     private String thumbPath;
     private long len;
     private long  createDate;
     private String size;
-    private int   timeStatus;// 0:当日，-1：昨天，-2：其他日子
+    private String   timeStatus;// 0:当日，-1：昨天，-2：其他日子
     private boolean  isChose;
 
 
@@ -70,11 +70,11 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
         this.path = path;
     }
 
-    public int getDuration() {
+    public String getDuration() {
         return duration;
     }
 
-    public void setDuration(int duration) {
+    public void setDuration(String duration) {
         this.duration = duration;
     }
 
@@ -86,11 +86,11 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
         this.thumbPath = thumbPath;
     }
 
-    public int getTimeStatus() {
+    public String getTimeStatus() {
         return timeStatus;
     }
 
-    public void setTimeStatus(int timeStatus) {
+    public void setTimeStatus(String timeStatus) {
         this.timeStatus = timeStatus;
     }
 

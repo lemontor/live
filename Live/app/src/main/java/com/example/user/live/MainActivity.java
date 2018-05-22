@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
@@ -42,8 +43,8 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout  mLayoutContent;
     private WebView  mWebView;
-//    String targetUrl = "http://210.12.56.75:8777/mobile/index.html";
-    String targetUrl = "http://study.huatec.com/mobile/index.html";
+    String targetUrl = "http://210.12.56.75:8777/mobile/index.html";
+//    String targetUrl = "http://study.huatec.com/mobile/index.html";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +78,10 @@ public class MainActivity extends AppCompatActivity {
     private void initListener() {
         WebAppInterface webAppInterface = new WebAppInterface(this);
         mWebView.addJavascriptInterface(webAppInterface,"Android");
+
+        AppInterface appInterface = new AppInterface(this);
+        mWebView.addJavascriptInterface(appInterface,"Android");
+
         mWebView.loadUrl(targetUrl);
         mWebView.setWebViewClient(new WebViewClient(){
             @Override
@@ -91,6 +96,14 @@ public class MainActivity extends AppCompatActivity {
                 super.onReceivedError(view, errorCode, description, failingUrl);
                 Log.e("tag_errorCode",errorCode+"");
             }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                Log.e("tag_url",url+"");
+                super.onPageStarted(view, url, favicon);
+            }
+
+
             //            onReceivedError()
         });
     }
@@ -134,7 +147,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public class AppInterface{
 
+        public Context  context;
+
+        public  AppInterface(Context c){
+            this.context = c;
+        }
+
+        @android.webkit.JavascriptInterface
+        public void login(String useId){
+            Intent  intent = new Intent(MainActivity.this,Main.class);
+            intent.putExtra("useId",useId);
+            startActivity(intent);
+        }
+    }
 
 
 
@@ -161,9 +188,6 @@ public class MainActivity extends AppCompatActivity {
             bundle.putString("img",img);
             bundle.putString("teacherId",teacherId);
             intent.putExtras(bundle);
-//            if(liveId == null || liveId.equals("")){
-//                return;
-//            }
             startActivity(intent);
         }
     }

@@ -68,6 +68,9 @@
         <activity android:name=".Main"
             android:screenOrientation="portrait"
             />
+        <!--<activity android:name=".video.VideoList"-->
+            <!--android:screenOrientation="portrait"/>-->
+
 
 
 

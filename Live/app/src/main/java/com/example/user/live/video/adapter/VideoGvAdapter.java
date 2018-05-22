@@ -13,6 +13,8 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.example.user.live.R;
 import com.example.user.live.utils.GlideUtils;
@@ -74,19 +76,25 @@ public class VideoGvAdapter extends BaseAdapter {
             viewHolderPic = (ViewHolderPic) view.getTag();
         }
         GlideUtils.loadLocalBitmap(context,entityList.get(i).getThumbPath(),viewHolderPic.ivPic,mGridWidth,mGridWidth);
+        viewHolderPic.tvLen.setText(entityList.get(i).getDuration());
+        if(entityList.get(i).isChose()){
+            viewHolderPic.ivChose.setImageResource(R.mipmap.group);
+        }else{
+            viewHolderPic.ivChose.setImageResource(R.mipmap.oval);
+        }
         final ViewHolderPic finalViewHolderPic = viewHolderPic;
         viewHolderPic.ivPic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.e("tag_poi",i+"");
                 if(entityList.get(i).isChose()){//已选过
-                    finalViewHolderPic.ivChose.setImageResource(R.drawable.mis_btn_unselected);
+                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.group);
                     entityList.get(i).setChose(false);
                     if(onChoseListener != null){
                         onChoseListener.onChose(i,false);
                     }
                 }else{//未选过
-                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.mis_default_check);
+                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.oval);
                     entityList.get(i).setChose(true);
                     if(onChoseListener != null){
                         onChoseListener.onChose(i,true);
@@ -102,14 +110,17 @@ public class VideoGvAdapter extends BaseAdapter {
     static class ViewHolderPic{
         private ImageView ivPic;
         private ImageView  ivChose;
-
+        private RelativeLayout layout;
+        private TextView  tvLen;
         public ViewHolderPic(View view) {
             ivPic = (ImageView) view.findViewById(R.id.iv_pic);
             ivChose = (ImageView) view.findViewById(R.id.cb_chose);
-            FrameLayout.LayoutParams  layoutParams = (FrameLayout.LayoutParams) ivPic.getLayoutParams();
+            layout = (RelativeLayout) view.findViewById(R.id.layout_up);
+            tvLen = (TextView) view.findViewById(R.id.tv_len);
+            FrameLayout.LayoutParams  layoutParams = (FrameLayout.LayoutParams) layout.getLayoutParams();
             layoutParams.width = mGridWidth;
             layoutParams.height = mGridWidth;
-            ivPic.setLayoutParams(layoutParams);
+            layout.setLayoutParams(layoutParams);
         }
     }
 
@@ -122,5 +133,9 @@ public class VideoGvAdapter extends BaseAdapter {
         public void onChose(int poi,boolean isChose);
     }
 
+
+    public void  notifyDataChange(){
+        notifyDataSetChanged();
+    }
 
 }

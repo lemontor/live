@@ -6,6 +6,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.example.user.live.R;
@@ -19,6 +20,7 @@ public class VideoFragment extends Fragment {
     private View contentView;
     private ListView mLvLive;
     private VolleyUtils volleyUtils;
+    private LinearLayout layoutList,layoutUp;
 
     @Nullable
     @Override
@@ -35,6 +37,19 @@ public class VideoFragment extends Fragment {
     }
 
     private void initListener() {
+        layoutList.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+
+        layoutUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
     }
 
     private void initObj() {
@@ -46,5 +61,7 @@ public class VideoFragment extends Fragment {
         View emptyView =  contentView.findViewById(R.id.layout_empty);
         emptyView.setVisibility(View.GONE);
         mLvLive.setEmptyView(emptyView);
+        layoutList = (LinearLayout) contentView.findViewById(R.id.layout_list);
+        layoutUp = (LinearLayout) contentView.findViewById(R.id.layout_up);
     }
 }

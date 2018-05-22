@@ -6,20 +6,26 @@
     android:orientation="vertical">
     <TextView
         android:id="@+id/tv_date"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="@dimen/dimen_90"
         android:gravity="center_vertical"
         android:paddingLeft="@dimen/dimen_32"
-        android:textColor="@color/color_666666"/>
+        android:textColor="@color/color_333333"
+        android:textSize="@dimen/text_size_30"
+        android:drawableLeft="@mipmap/oval"
+        android:drawablePadding="@dimen/dimen_20"
+        />
 
     <com.example.user.live.view.NoScroolGridView
         android:id="@+id/gv_pic"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:numColumns="4"
-        android:verticalSpacing="@dimen/dimen_8"
-        android:horizontalSpacing="@dimen/dimen_8"
+        android:verticalSpacing="@dimen/dimen_20"
+        android:horizontalSpacing="@dimen/dimen_20"
         android:listSelector="@android:color/transparent"
+        android:layout_marginLeft="@dimen/dimen_24"
+        android:layout_marginRight="@dimen/dimen_20"
         >
     </com.example.user.live.view.NoScroolGridView>
 </LinearLayout>

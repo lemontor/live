@@ -1,6 +1,7 @@
 package com.example.user.live.video.adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,17 +11,19 @@ import com.example.user.live.R;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.view.NoScroolGridView;
+import java.security.cert.PolicyNode;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by user on 2018/4/26.
  */
 public class VideoListAdapter extends BaseAdapter {
-    private List<List<VideoEntity>> videoTotalEntities;
+    private List<VideoTotalEntity> videoTotalEntities;
     private Context context;
     private LayoutInflater inflater;
 
-    public VideoListAdapter(Context context, List<List<VideoEntity>> videoTotalEntities) {
+    public VideoListAdapter(Context context, List<VideoTotalEntity> videoTotalEntities) {
         this.context = context;
         inflater = LayoutInflater.from(context);
         this.videoTotalEntities = videoTotalEntities;
@@ -51,21 +54,50 @@ public class VideoListAdapter extends BaseAdapter {
         } else {
             vh = (ViewHolder) view.getTag();
         }
-        if (videoTotalEntities.get(i).get(0).getTimeStatus() == 0) {
+        if (videoTotalEntities.get(i).getTitle().equals("0")) {
             vh.tvTitle.setText("今天");
-        } else if (videoTotalEntities.get(i).get(0).getTimeStatus() == -1) {
+        } else if (videoTotalEntities.get(i).getTitle().equals("-1")) {
             vh.tvTitle.setText("昨天");
         } else {
-            vh.tvTitle.setText("其他");
+            vh.tvTitle.setText(videoTotalEntities.get(i).getTitle());
         }
-        VideoGvAdapter gvAdapter = new VideoGvAdapter(context, videoTotalEntities.get(i));
+
+        if (videoTotalEntities.get(i).isChose()) {
+            Drawable leftDrawable = context.getResources().getDrawable(R.mipmap.group);
+            vh.tvTitle.setCompoundDrawablesWithIntrinsicBounds(leftDrawable, null, null, null);
+        } else {
+            Drawable leftDrawable = context.getResources().getDrawable(R.mipmap.oval);
+            vh.tvTitle.setCompoundDrawablesWithIntrinsicBounds(leftDrawable, null, null, null);
+        }
+
+        final VideoGvAdapter gvAdapter = new VideoGvAdapter(context, videoTotalEntities.get(i).getVideoEntities());
         vh.gvPic.setAdapter(gvAdapter);
         gvAdapter.setOnChoseListener(new VideoGvAdapter.OnChoseListener() {
             @Override
             public void onChose(int poi, boolean isChose) {
-                if(onSendListener != null){
-                    onSendListener.send(i,poi,isChose);
+                if (onSendListener != null) {
+                    onSendListener.send(i, poi, isChose);
                 }
+            }
+        });
+        final ViewHolder finalVh = vh;
+        vh.tvTitle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (videoTotalEntities.get(i).isChose()) {//已经选中
+                    Drawable leftDrawable = context.getResources().getDrawable(R.mipmap.oval);
+                    finalVh.tvTitle.setCompoundDrawablesWithIntrinsicBounds(leftDrawable, null, null, null);
+                    if (onSendListener != null) {
+                        onSendListener.choseAll(i, false);
+                    }
+                } else {
+                    Drawable leftDrawable = context.getResources().getDrawable(R.mipmap.group);
+                    finalVh.tvTitle.setCompoundDrawablesWithIntrinsicBounds(leftDrawable, null, null, null);
+                    if (onSendListener != null) {
+                        onSendListener.choseAll(i, true);
+                    }
+                }
+                gvAdapter.notifyDataChange();
             }
         });
         return view;
@@ -83,13 +115,16 @@ public class VideoListAdapter extends BaseAdapter {
     }
 
     OnSendListener onSendListener;
-    public void  setOnSendListener(OnSendListener onSendListener){
+
+    public void setOnSendListener(OnSendListener onSendListener) {
         this.onSendListener = onSendListener;
     }
 
 
-    public interface  OnSendListener{
-        public void send(int poi,int childPoi,boolean isChose);
+    public interface OnSendListener {
+        public void send(int poi, int childPoi, boolean isChose);
+
+        public void choseAll(int poi, boolean isChose);
     }
 
 

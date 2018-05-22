@@ -3,19 +3,51 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/iv_pic"
+    <RelativeLayout
+        android:id="@+id/layout_up"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+        android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/iv_pic"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dimen_40"
+            android:orientation="horizontal"
+            android:background="@color/color_60000000"
+            android:layout_alignParentBottom="true"
+            android:paddingLeft="6dp"
+            android:paddingRight="@dimen/dimen_10"
+            >
+            <TextView
+                android:id="@+id/tv_len"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="@android:color/white"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textSize="@dimen/text_size_24"/>
+
+            <ImageView
+                android:id="@+id/iv_is_up"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+    </RelativeLayout>
+
     <ImageView
         android:id="@+id/cb_chose"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignEnd="@+id/iv_pic"
-        android:layout_gravity="right|top"
-        android:src="@drawable/mis_btn_unselected"/>
+        android:layout_marginTop="8dp"
+        android:layout_marginLeft="8dp"
+        android:src="@mipmap/oval"
+        />
 
 
 </FrameLayout>

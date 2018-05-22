@@ -1,5 +1,6 @@
 package com.example.user.live.live;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -7,6 +8,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.android.volley.VolleyError;
@@ -19,52 +23,55 @@ import com.example.user.live.utils.VolleyUtils;
  */
 public class LiveFragment extends Fragment {
 
+//    private LinearLayout layoutWebView;
     private View contentView;
-    private ListView mLvLive;
-    private VolleyUtils volleyUtils;
+    private String url = "https://www.baidu.com/";
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         contentView = inflater.inflate(R.layout.activity_live,null);
         initUI(contentView);
-        initObj();
         initListener();
-        initData();
         return contentView;
     }
 
-    private void initData() {
-        loadLiveData();
-    }
 
     private void initListener() {
-    }
-
-    private void initObj() {
-        volleyUtils = new VolleyUtils();
-    }
-
-    private void initUI(View contentView) {
-        mLvLive = (ListView) contentView.findViewById(R.id.lv);
-        View emptyView =  contentView.findViewById(R.id.layout_empty);
-        mLvLive.setEmptyView(emptyView);
-    }
-
-
-    private void  loadLiveData(){
-        volleyUtils.getLive(new VolleyUtils.OnVolleyListener() {
+//        WebView webView = new WebView(getActivity());
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+        webView.loadUrl(url);
+        webView.setWebViewClient(new WebViewClient(){
             @Override
-            public void onResponse(String response) {
-                Log.e("tag_live",response+"");
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                view.loadUrl(url);
+                return false;
             }
 
             @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("tag_liveonErrorResponse",error.getMessage()+"");
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                if(!url.contains("")){
 
+                }
+                super.onPageStarted(view, url, favicon);
             }
         });
+//        layoutWebView.addView(webView);
+    }
+    WebView webView;
+    private void initUI(View contentView) {
+//        layoutWebView = (LinearLayout) contentView.findViewById(R.id.line_webview);
+        webView = (WebView) contentView.findViewById(R.id.webview);
+//        webView.loadUrl(url);
     }
 
+
+    @Override
+    public void onDestroy() {
+//        if(layoutWebView != null){
+//            layoutWebView.removeAllViews();
+//        }
+        super.onDestroy();
+    }
 }
