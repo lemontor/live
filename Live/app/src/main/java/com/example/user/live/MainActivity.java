@@ -160,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
             Intent  intent = new Intent(MainActivity.this,Main.class);
             intent.putExtra("useId",useId);
             startActivity(intent);
+            finish();
         }
     }
 

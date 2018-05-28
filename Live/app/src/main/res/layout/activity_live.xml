@@ -4,14 +4,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!--<LinearLayout-->
-        <!--android:id="@+id/line_webview"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:orientation="vertical"-->
-        <!--android:background="@android:color/black"></LinearLayout>-->
-    <WebView
-        android:id="@+id/webview"
+    <LinearLayout
+        android:id="@+id/line_webview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></WebView>
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        ></LinearLayout>
+    <!--<WebView-->
+        <!--android:id="@+id/webview"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"></WebView>-->
 </LinearLayout>

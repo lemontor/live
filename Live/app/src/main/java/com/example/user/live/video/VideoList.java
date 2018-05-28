@@ -1,9 +1,12 @@
 package com.example.user.live.video;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -33,6 +36,8 @@ public class VideoList extends Activity {
     private VideoListAdapter adapter;
     private List<VideoTotalEntity> videoData;
     private TextView tvTitle, tvUp;
+    private SwitchCompat  switchCompat;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +74,19 @@ public class VideoList extends Activity {
                        entity.setChose(isChose);
                    }
                 }
+            }
+        });
+        tvUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(VideoList.this,VideoUpLoad.class);
+                startActivity(intent);
+            }
+        });
+        switchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                Log.e("tag_switch",b+"");
             }
         });
     }
@@ -115,6 +133,7 @@ public class VideoList extends Activity {
         tvTitle = (TextView) findViewById(R.id.tv_title);
         tvUp = (TextView) findViewById(R.id.tv_set);
         mLvVideo = (ListView) findViewById(R.id.lv_video);
+        switchCompat = (SwitchCompat) findViewById(R.id.switch_single);
         View emptyView = findViewById(R.id.layout_empty);
         mLvVideo.setEmptyView(emptyView);
     }

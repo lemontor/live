@@ -132,21 +132,8 @@ public class GetVideoDataUtils {
                     videoEntityList.add(info);
                     listMap.put(dateType,videoEntityList);
                 }
-//                sysVideoList.add(info);
             } while (cursor.moveToNext());
             cursor.close();
-//            Collections.sort(sysVideoList, new Comparator<VideoEntity>() {//降序排列
-//                @Override
-//                public int compare(VideoEntity videoEntity, VideoEntity t1) {
-//                    if (videoEntity.getCreateDate() > t1.getCreateDate()) {
-//                        return 1;
-//                    } else if (videoEntity.getCreateDate() == t1.getCreateDate()) {
-//                        return 0;
-//                    } else {
-//                        return -1;
-//                    }
-//                }
-//            });
             String json = new Gson().toJson(listMap);
             Log.e("tag_json",json+"");
         }
@@ -157,7 +144,7 @@ public class GetVideoDataUtils {
     /*
     返回 0为当前
     返回-1为昨天
-    返回-2为其他
+    返回其他
      */
     public static String isToday(long date) {
         String day = "";
@@ -198,18 +185,21 @@ public class GetVideoDataUtils {
 
     public static String getTime(long date) {
         int second = (int) (date / 1000);
+        Log.e("tag_getTime",second+"");
         if (second > 60) {
             int minte = second / 60;
             int tempSecond = second % 60;
             String zeroMinte = "";
             if (minte < 10) {
-                zeroMinte = "0" + zeroMinte + ":";
+                zeroMinte = "0" + minte + ":";
             } else {
-                zeroMinte = String.valueOf(zeroMinte + ":");
+                zeroMinte = String.valueOf(minte + ":");
             }
             String zeroSecond = "";
             if (tempSecond < 10) {
-                zeroSecond = "0" + zeroSecond + "";
+                zeroSecond = "0" + tempSecond + "";
+            }else{
+                zeroSecond = String.valueOf(tempSecond);
             }
             return zeroMinte + " " + zeroSecond;
         } else {

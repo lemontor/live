@@ -1,5 +1,7 @@
 package com.example.user.live.live;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,8 +14,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.android.volley.VolleyError;
+import com.example.user.live.Main;
 import com.example.user.live.R;
 import com.example.user.live.utils.VolleyUtils;
 
@@ -23,9 +27,11 @@ import com.example.user.live.utils.VolleyUtils;
  */
 public class LiveFragment extends Fragment {
 
-//    private LinearLayout layoutWebView;
+    private LinearLayout layoutWebView;
     private View contentView;
-    private String url = "https://www.baidu.com/";
+    private String url = "http://210.12.56.75:8777/mobile/liebiao.html";
+    private String useId;
+
 
     @Nullable
     @Override
@@ -36,9 +42,8 @@ public class LiveFragment extends Fragment {
         return contentView;
     }
 
-
     private void initListener() {
-//        WebView webView = new WebView(getActivity());
+        WebView webView = new WebView(getActivity());
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
         webView.loadUrl(url);
@@ -57,21 +62,41 @@ public class LiveFragment extends Fragment {
                 super.onPageStarted(view, url, favicon);
             }
         });
-//        layoutWebView.addView(webView);
+        layoutWebView.addView(webView);
     }
-    WebView webView;
+
     private void initUI(View contentView) {
-//        layoutWebView = (LinearLayout) contentView.findViewById(R.id.line_webview);
-        webView = (WebView) contentView.findViewById(R.id.webview);
-//        webView.loadUrl(url);
+        layoutWebView = (LinearLayout) contentView.findViewById(R.id.line_webview);
+        Bundle bundle = getArguments();
+        if(bundle != null){
+            useId = bundle.getString("useId");
+        }
     }
 
 
     @Override
     public void onDestroy() {
-//        if(layoutWebView != null){
-//            layoutWebView.removeAllViews();
-//        }
+        if(layoutWebView != null){
+            layoutWebView.removeAllViews();
+        }
         super.onDestroy();
     }
+
+
+    public class LiveInterface{
+
+        public Context context;
+
+        public  LiveInterface(Context c){
+            this.context = c;
+        }
+
+        @android.webkit.JavascriptInterface
+        public void detail(String liveId){
+            Intent intent = new Intent(getActivity(),Main.class);
+            intent.putExtra("useId",liveId);
+            startActivity(intent);
+        }
+    }
+
 }

@@ -7,10 +7,10 @@
     <RelativeLayout
         android:id="@+id/rg_bottom"
         android:layout_width="match_parent"
-        android:layout_height="43dp"
+        android:layout_height="39dp"
         >
 
-        <RadioButton
+        <TextView
             android:id="@+id/rb_live"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -20,13 +20,15 @@
             android:textColor="@color/color_34A446"
             android:layout_toLeftOf="@+id/line"
             android:textSize="17sp"
-            android:layout_marginRight="39dp"/>
+            android:layout_marginRight="39dp"
+            android:drawableBottom="@drawable/rectangle"
+            />
         <View
             android:id="@+id/line"
             android:layout_width="1dp"
             android:layout_height="30dp"
             android:layout_centerInParent="true"/>
-        <RadioButton
+        <TextView
             android:id="@+id/rv_video"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -42,7 +44,8 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/dimen_1"
         android:layout_below="@+id/rg_bottom"
-        android:background="@color/color_dddddd" />
+        android:background="@color/color_dddddd"
+        android:layout_marginTop="5dp"/>
     <FrameLayout
         android:id="@+id/layout_content"
         android:layout_width="match_parent"

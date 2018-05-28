@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" 
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_44000000">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true"
+        >
+        <TextView
+            android:id="@+id/tv_clear_ing"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:textColor="@color/color_666666"
+            android:textSize="@dimen/text_size_30"
+            android:text="清除进行中的任务"
+            android:gravity="center"
+            android:background="@android:color/white"/>
+        <include
+            layout="@layout/layout_line"
+            android:layout_width="match_parent"
+            android:layout_height="0.1dp"/>
+        <TextView
+            android:id="@+id/tv_reset"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:textColor="@color/color_666666"
+            android:textSize="@dimen/text_size_30"
+            android:text="重试失败项"
+            android:gravity="center"
+            android:background="@android:color/white"/>
+        <include
+            layout="@layout/layout_line"
+            android:layout_width="match_parent"
+            android:layout_height="0.1dp"/>
+        <TextView
+            android:id="@+id/tv_clear_fail"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:textColor="@color/color_666666"
+            android:textSize="@dimen/text_size_30"
+            android:text="清除失败项"
+            android:gravity="center"
+            android:background="@android:color/white"/>
+        <include
+            layout="@layout/layout_line"
+            android:layout_width="match_parent"
+            android:layout_height="0.1dp"/>
+        <TextView
+            android:id="@+id/tv_cancel"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:textColor="@color/color_E75B5B"
+            android:textSize="@dimen/text_size_30"
+            android:text="取消"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/dimen_20"
+            android:background="@android:color/white"
+            />
+    </LinearLayout>
+    
+    
+
+</RelativeLayout>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="@dimen/dimen_24"
+    android:paddingTop="@dimen/dimen_20"
+    android:paddingBottom="@dimen/dimen_20"
+    android:paddingRight="@dimen/dimen_22">
+
+    <ImageView
+        android:id="@+id/iv_pic"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginRight="@dimen/dimen_22"
+        />
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/iv_pic"
+        android:textColor="@color/color_333333"
+        android:textSize="@dimen/text_size_32"
+        android:text="那些年"
+        android:paddingTop="@dimen/dimen_8"/>
+
+    <TextView
+        android:id="@+id/tv_load"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/iv_pic"
+        android:textColor="@color/color_999999"
+        android:textSize="@dimen/text_size_28"
+        android:paddingTop="@dimen/dimen_8"
+        android:text="0"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="@dimen/dimen_10"/>
+    <TextView
+        android:id="@+id/tv_total"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/tv_load"
+        android:textColor="@color/color_999999"
+        android:textSize="@dimen/text_size_28"
+        android:paddingTop="@dimen/dimen_8"
+        android:text="/0"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="@dimen/dimen_10"/>
+
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/tv_total"
+        android:textColor="@color/color_999999"
+        android:textSize="@dimen/text_size_28"
+        android:paddingTop="@dimen/dimen_8"
+        android:paddingLeft="@dimen/dimen_100"
+        android:text="正在上传"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="@dimen/dimen_10"/>
+
+
+
+</RelativeLayout>
