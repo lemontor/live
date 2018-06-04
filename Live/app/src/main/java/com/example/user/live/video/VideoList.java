@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.example.user.live.R;
 import com.example.user.live.utils.GetVideoDataUtils;
+import com.example.user.live.utils.ToastUtils;
 import com.example.user.live.video.adapter.VideoListAdapter;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
@@ -63,6 +64,7 @@ public class VideoList extends Activity {
                         adapter.notifyDataSetChanged();
                     }
                 }
+                Log.e("tag_send",videoData.toString()+"");
             }
 
             @Override
@@ -74,13 +76,22 @@ public class VideoList extends Activity {
                        entity.setChose(isChose);
                    }
                 }
+                Log.e("tag_send_choseAll",videoData.toString()+"");
             }
         });
         tvUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(VideoList.this,VideoUpLoad.class);
-                startActivity(intent);
+                List<VideoEntity>  data = getUpLoadData();
+                if(data != null && data.size() > 0){
+                     VideoTotalEntity totalEntity = new VideoTotalEntity();
+                    totalEntity.setVideoEntities(data);
+                    Intent intent = new Intent(VideoList.this,VideoUpLoad.class);
+                    intent.putExtra("video",totalEntity);
+                    startActivity(intent);
+                }else{
+                    ToastUtils.showToast(VideoList.this,"请选择上传的视频");
+                }
             }
         });
         switchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -150,6 +161,24 @@ public class VideoList extends Activity {
             }
         }.start();
     }
+
+    private List<VideoEntity>  getUpLoadData(){
+        List<VideoEntity> videoEntityList = new ArrayList<>();
+        for(VideoTotalEntity entity : videoData){
+             if(entity.isChose()){
+                videoEntityList.addAll(entity.getVideoEntities());
+             }else{
+                 for(VideoEntity videoEntity : entity.getVideoEntities()){
+                     if(videoEntity.isChose()){
+                         videoEntityList.add(videoEntity);
+                     }
+                 }
+             }
+        }
+        Log.e("tag_up_data",videoEntityList.toString()+"");
+        return  videoEntityList;
+    }
+
 
     @Override
     protected void onDestroy() {

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingRight="@dimen/dimen_20"
+    android:paddingLeft="@dimen/dimen_20"
+    >
+    <ProgressBar
+        android:id="@+id/pro"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:max="100"
+        android:layout_marginTop="@dimen/dimen_40"
+        android:progress="30"
+        />
+
+    <TextView
+        android:id="@+id/tv_dismiss"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="X"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:textSize="@dimen/text_size_30"
+        android:paddingRight="@dimen/dimen_10"
+        android:textColor="@color/color_E75B5B"/>
+
+    <TextView
+        android:id="@+id/tv_start"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/pro"
+        android:paddingTop="@dimen/dimen_20"
+        android:paddingBottom="@dimen/dimen_20"
+        android:text="开始"
+        android:textColor="@color/color_999999"
+        android:gravity="center"
+        android:textSize="@dimen/text_size_32"/>
+
+</RelativeLayout>

@@ -284,7 +284,6 @@ public class LiveCameraActivity extends Activity implements View.OnClickListener
         if (bundle != null) {
             pushUrl = bundle.getString("pushUrl");
             Log.e("tag_pushUrl===", pushUrl + "");
-            pushUrl = "rtmp://live.cn-north-1.myhuaweicloud.com/live/591BBEBB8AEC4821A3DF7D8C2A6A3656";
             liveId = bundle.getString("liveId");
             teacherName = bundle.getString("teacherName");
             img = bundle.getString("img");

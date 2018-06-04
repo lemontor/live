@@ -88,13 +88,13 @@ public class VideoGvAdapter extends BaseAdapter {
             public void onClick(View view) {
                 Log.e("tag_poi",i+"");
                 if(entityList.get(i).isChose()){//已选过
-                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.group);
+                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.oval);
                     entityList.get(i).setChose(false);
                     if(onChoseListener != null){
                         onChoseListener.onChose(i,false);
                     }
                 }else{//未选过
-                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.oval);
+                    finalViewHolderPic.ivChose.setImageResource(R.mipmap.group);
                     entityList.get(i).setChose(true);
                     if(onChoseListener != null){
                         onChoseListener.onChose(i,true);

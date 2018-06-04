@@ -79,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
         WebAppInterface webAppInterface = new WebAppInterface(this);
         mWebView.addJavascriptInterface(webAppInterface,"Android");
 
-        AppInterface appInterface = new AppInterface(this);
-        mWebView.addJavascriptInterface(appInterface,"Android");
+//        AppInterface appInterface = new AppInterface(this);
+//        mWebView.addJavascriptInterface(appInterface,"Android");
 
         mWebView.loadUrl(targetUrl);
         mWebView.setWebViewClient(new WebViewClient(){

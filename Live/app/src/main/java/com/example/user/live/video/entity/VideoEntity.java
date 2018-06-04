@@ -99,12 +99,13 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
         return "VideoEntity{" +
                 "title='" + title + '\'' +
                 ", path='" + path + '\'' +
-                ", duration=" + duration +
+                ", duration='" + duration + '\'' +
                 ", thumbPath='" + thumbPath + '\'' +
                 ", len=" + len +
                 ", createDate=" + createDate +
                 ", size='" + size + '\'' +
-                ", timeStatus=" + timeStatus +
+                ", timeStatus='" + timeStatus + '\'' +
+                ", isChose=" + isChose +
                 '}';
     }
 

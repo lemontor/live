@@ -64,6 +64,7 @@
             android:screenOrientation="portrait"/>
         <receiver android:name=".NetWork.NetWorkStateReceiver"/>
         <activity android:name=".video.VideoUpLoad"/>
+        <service android:name=".video.UpLoadService"/>
 
 
 

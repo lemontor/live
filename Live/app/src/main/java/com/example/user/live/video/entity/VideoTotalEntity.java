@@ -1,11 +1,12 @@
 package com.example.user.live.video.entity;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by user on 2018/4/26.
  */
-public class VideoTotalEntity {
+public class VideoTotalEntity implements Serializable{
 
     private  String title;
     private  List<VideoEntity>  videoEntities;
@@ -36,5 +37,14 @@ public class VideoTotalEntity {
 
     public void setVideoEntities(List<VideoEntity> videoEntities) {
         this.videoEntities = videoEntities;
+    }
+
+    @Override
+    public String toString() {
+        return "VideoTotalEntity{" +
+                "title='" + title + '\'' +
+                ", videoEntities=" + videoEntities +
+                ", isChose=" + isChose +
+                '}';
     }
 }

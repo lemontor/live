@@ -1,11 +1,13 @@
 package com.example.user.live.video;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PaintDrawable;
 import android.os.Bundle;
 import android.text.Layout;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,7 +18,10 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.example.user.live.R;
+import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.view.StaticListView;
+
+import org.greenrobot.eventbus.EventBus;
 
 /**
  * Created by user on 2018/4/27.
@@ -30,13 +35,26 @@ public class VideoUpLoad extends Activity implements View.OnClickListener{
     private TextView tvLoadNotify, tvLoadClear;
     private TextView tvTitle,tvSet;
     private View rootView;
+    private VideoTotalEntity videoTotalEntity;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         rootView = View.inflate(this,R.layout.activity_video_upload,null);
         setContentView(rootView);
         initUI();
+        initData();
         initListener();
+    }
+
+    private void initData() {
+        videoTotalEntity = (VideoTotalEntity) getIntent().getSerializableExtra("video");
+        if(videoTotalEntity != null){
+            Log.e("tag_data",videoTotalEntity.toString()+"");
+            EventBus.getDefault().postSticky(videoTotalEntity);
+            Intent intent = new Intent(this,UpLoadService.class);
+            startService(intent);
+        }
     }
 
     private void initUI() {
@@ -62,6 +80,7 @@ public class VideoUpLoad extends Activity implements View.OnClickListener{
         tvSet.setText("");
         Drawable drawable = getResources().getDrawable(R.mipmap.spsc_gengduo);
         tvSet.setCompoundDrawablesWithIntrinsicBounds(drawable,null,null,null);
+
     }
 
     private void initListener() {
