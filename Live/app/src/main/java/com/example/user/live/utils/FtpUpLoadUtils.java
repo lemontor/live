@@ -10,7 +10,11 @@ import android.net.NetworkInfo;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.user.live.video.entity.FromActivityEventBean;
+import com.example.user.live.video.entity.FromUploadEventBean;
 import com.example.user.live.video.entity.FtpUploadInfoEntity;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,6 +26,11 @@ import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
 
 /**
  * Created by user on 2018/5/18.
+ ftp_ip: 49.4.15.103
+ ftp_port: 21
+ ftp_user: study1
+ ftp_pwd: study1
+ ftp_base_path: /mnt/sdc/storage/video/dev/andriod
  */
 public class FtpUpLoadUtils {
 
@@ -58,9 +67,9 @@ public class FtpUpLoadUtils {
         password = entity.password;
         path = entity.path;
         serverPath = entity.serverPath;
-        Log.i(TAG, "ip:" + ip + "," + "port:" + port + "," + "usrName:" + userName + "," + "password:" + password + "serverPath:" + serverPath + "," + "path:" + path);
+        Log.e(TAG, "ip:" + ip + "," + "port:" + port + "," + "usrName:" + userName + "," + "password:" + password + "serverPath:" + serverPath + "," + "path:" + path);
         if (path == null || "".equals(path.trim()) || new File(path).isDirectory() || !new File(path).exists()) {
-            Log.i(TAG, "File is not exsist");
+            Log.e(TAG, "File is not exsist");
             return "4";
         }
         packageFile = new File(path);
@@ -79,18 +88,24 @@ public class FtpUpLoadUtils {
     private void initConnection(String ip, int port, String userName, String password) {
         try {
             ftp = new FTPClient();
-            Log.i(TAG, "ip:" + ip + "," + "port:" + port + "," + "usrName:" + userName + "," + "password:" + password);
+            Log.e(TAG, "ip:" + ip + "," + "port:" + port + "," + "usrName:" + userName + "," + "password:" + password);
             ftp.connect(ip, port);
-            Log.d(TAG, ftp.toString());
+            Log.e(TAG, ftp.toString());
             ftp.login(userName, password);
-            ftp.setType(FTPClient.TYPE_AUTO);
+            ftp.setType(FTPClient.TYPE_AUTO);//设置传输的类型
             ftp.setCharset(TEXT_CHARSET);
-            ftp.setCompressionEnabled(true);
+            ftp.setPassive(true);
+            boolean  isCompression = ftp.isCompressionSupported();
+            if(isCompression){
+                ftp.setCompressionEnabled(true);
+            }
             //更改服务端当前目录
-            ftp.changeDirectory(serverPath);
+            String dir = ftp.currentDirectory();
+            Log.e("tag_dir",dir+"");
+//            ftp.changeDirectory(serverPath);
             asynUpload();
         } catch (Exception e) {
-            Log.d("MyFTPClient", e.getMessage());
+            Log.e("MyFTPClient", e.getMessage());
         }
     }
 
@@ -100,11 +115,11 @@ public class FtpUpLoadUtils {
     public void asynUpload() {
         boolean b = isFirstUpload(getFileName(path));
         if (b) {
-            Log.i(TAG, "is first upload");
+            Log.e(TAG, "is first upload");
             thread = new UploadThread();
             thread.start();
         } else {
-            Log.i(TAG, "is not first upload");
+            Log.e(TAG, "is not first upload");
             HashMap<String, Object> infos = getBreakpointInfo();
             String info_path = (String) infos.get("info_path");
             String info_serverpath = (String) infos.get("info_serverpath");
@@ -195,13 +210,13 @@ public class FtpUpLoadUtils {
             this.path = path;
             this.currentDirectory = currentDirectory;
             this.uploadSize = uploadSize;
-            Log.i(TAG, "Continue Info: path" + path + "serverpath:" + currentDirectory + " uploadSize:" + uploadSize);
+            Log.e(TAG, "Continue Info: path" + path + "serverpath:" + currentDirectory + " uploadSize:" + uploadSize);
         }
 
         @Override
         public void run() {
             if (ftp.isResumeSupported()) {
-                Log.i("MyFTPClient", "ftpServerSupport!");
+                Log.e("MyFTPClient", "ftpServerSupport!");
                 try {
                     ftp.changeDirectory(currentDirectory);
                     ftp.upload(packageFile, uploadSize, new MyTransferListener());
@@ -228,14 +243,24 @@ public class FtpUpLoadUtils {
         long percent = 0L;
         //传输中止时触发
         public void aborted() {
-            Log.d("MyFTPClient","file aborted");
-            Log.i("MyFTPClient","MyFTPClientaborted:" + uploadSize);
+            Log.e("MyFTPClient","file aborted");
+            Log.e("MyFTPClient","MyFTPClientaborted:" + uploadSize);
+            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            fromUploadEventBean.setEventType(2);
+            fromUploadEventBean.setProgress(0);
+            fromUploadEventBean.setType(5);
+            EventBus.getDefault().post(fromUploadEventBean);
             saveBreakpointInfo();
             disconnect();
             context.unregisterReceiver(connctionChangeReceiver);
         }
         //文件传输完成时，触发
         public void completed() {
+            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            fromUploadEventBean.setEventType(2);
+            fromUploadEventBean.setProgress(0);
+            fromUploadEventBean.setType(3);
+            EventBus.getDefault().post(fromUploadEventBean);
             //文件传输完成时，将已上传文件大小置空
             uploadSize = 0;
             String fileName = getFileName(path);
@@ -252,25 +277,41 @@ public class FtpUpLoadUtils {
             intent.setAction(UPLOAD_COMPLETED_ACTION);
             intent.putExtra("path", path);
             context.sendBroadcast(intent);
-            Log.d("MyFTPClient","file completed");
+            Log.e("MyFTPClient","file completed");
         }
         //传输失败时触发
         public void failed() {
-            Log.d("MyFTPClient","file failed");
-            Log.i("MyFTPClient","MyFTPClientFailed:"+uploadSize);
+            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            fromUploadEventBean.setEventType(2);
+            fromUploadEventBean.setProgress(0);
+            fromUploadEventBean.setType(4);
+            EventBus.getDefault().post(fromUploadEventBean);
+            Log.e("MyFTPClient","file failed");
+            Log.e("MyFTPClient","MyFTPClientFailed:"+uploadSize);
             saveBreakpointInfo();
             disconnect();
             context.unregisterReceiver(connctionChangeReceiver);
         }
         //文件开始上传或下载时触发
         public void started() {
-            Log.d("MyFTPClient","file start");
+            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            fromUploadEventBean.setEventType(2);
+            fromUploadEventBean.setProgress(0);
+            fromUploadEventBean.setType(1);
+            EventBus.getDefault().post(fromUploadEventBean);
+            Log.e("MyFTPClient","file start");
         }
         //显示已经传输的字节数
         public void transferred(int arg0) {
             uploadSize += arg0;
             percent = (long)(uploadSize*100/(fileSize*1.0));
-            Log.d("MyFTPClient","percent:"+percent+"%  UploadSize:"+uploadSize+"byte");
+            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            fromUploadEventBean.setEventType(2);
+            fromUploadEventBean.setProgress((int) percent);
+            fromUploadEventBean.setLen(uploadSize);
+            fromUploadEventBean.setType(2);
+            EventBus.getDefault().post(fromUploadEventBean);
+            Log.e("MyFTPClient","percent:"+percent+"%  UploadSize:"+uploadSize+"byte");
         }
     }
     /**
@@ -321,8 +362,8 @@ public class FtpUpLoadUtils {
      */
     private void saveBreakpointInfo() {
         String fileName = getFileName(path);
-        Log.i(TAG, "fileName:" + fileName);
-        Log.i(TAG, "saveBreakpointInfo");
+        Log.e(TAG, "fileName:" + fileName);
+        Log.e(TAG, "saveBreakpointInfo");
         String [] keys = getKeys(fileName);
         //拼接要存入的断点信息
         try {
@@ -332,7 +373,7 @@ public class FtpUpLoadUtils {
             editor.putString(keys[1], serverPath);
             editor.putLong(keys[2], uploadSize);
             boolean b = editor.commit();
-            Log.i(TAG, "Is save successfully?" + b);
+            Log.e(TAG, "Is save successfully?" + b);
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }

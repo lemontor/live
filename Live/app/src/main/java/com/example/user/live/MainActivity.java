@@ -15,6 +15,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -54,11 +55,10 @@ public class MainActivity extends AppCompatActivity {
         WebSettings  webSetting = mWebView.getSettings();
         webSetting.setJavaScriptEnabled(true);//支持与javascript交互
         webSetting.setJavaScriptCanOpenWindowsAutomatically(true);//支持通过js打开新窗口
-
         //设置自适应屏幕，两者合用
+        mWebView.setWebChromeClient(new WebChromeClient());
         webSetting.setUseWideViewPort(true); //将图片调整到适合webview的大小
         webSetting.setLoadWithOverviewMode(true); // 缩放至屏幕的大小
-
         webSetting.setDefaultTextEncodingName("utf-8");
         initListener();
         EventBus.getDefault().register(this);

@@ -24,5 +24,8 @@ public class GlideUtils {
         Glide.with(context).load(file).placeholder(R.drawable.mis_default_error).override(width,height).centerCrop().into(imageView);
     }
 
-
+    public  static void  loadLocalPic(Context context, String path, ImageView imageView){
+        File file = new File(path);
+        Glide.with(context).load(file).placeholder(R.drawable.mis_default_error).centerCrop().into(imageView);
+    }
 }

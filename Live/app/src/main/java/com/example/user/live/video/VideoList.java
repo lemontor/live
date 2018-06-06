@@ -63,6 +63,12 @@ public class VideoList extends Activity {
                         videoData.get(poi).setChose(isChose);
                         adapter.notifyDataSetChanged();
                     }
+                }else{
+                    boolean chose = choseVideoAll(videoData.get(poi).getVideoEntities());
+                    if(chose){
+                        videoData.get(poi).setChose(true);
+                        adapter.notifyDataSetChanged();
+                    }
                 }
                 Log.e("tag_send",videoData.toString()+"");
             }
@@ -86,6 +92,8 @@ public class VideoList extends Activity {
                 if(data != null && data.size() > 0){
                      VideoTotalEntity totalEntity = new VideoTotalEntity();
                     totalEntity.setVideoEntities(data);
+                    totalEntity.getVideoEntities().get(0).setStatus(2);
+                    totalEntity.getVideoEntities().get(1).setStatus(6);
                     Intent intent = new Intent(VideoList.this,VideoUpLoad.class);
                     intent.putExtra("video",totalEntity);
                     startActivity(intent);
@@ -100,6 +108,16 @@ public class VideoList extends Activity {
                 Log.e("tag_switch",b+"");
             }
         });
+    }
+
+
+    private boolean  choseVideoAll(List<VideoEntity>  entityList){
+        for(VideoEntity videoEntity : entityList){
+            if(!videoEntity.isChose()){
+                return false;
+            }
+        }
+        return true;
     }
 
     private void initObj() {

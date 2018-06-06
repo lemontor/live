@@ -16,7 +16,24 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
     private String size;
     private String   timeStatus;// 0:当日，-1：昨天，-2：其他日子
     private boolean  isChose;
+    private int   status;
+    private int   progress;
 
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public void setProgress(int progress) {
+        this.progress = progress;
+    }
 
     public boolean isChose() {
         return isChose;

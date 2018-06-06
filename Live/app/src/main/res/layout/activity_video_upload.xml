@@ -5,7 +5,7 @@
     android:background="@android:color/white">
     <include
         layout="@layout/layout_action_bar"/>
-    <ScrollView
+    <android.support.v4.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <LinearLayout
@@ -14,11 +14,10 @@
             android:orientation="vertical">
             <include
                 layout="@layout/layout_head_upload"/>
-            <LinearLayout
-                android:id="@+id/layout_up"
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/rv_load"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"></LinearLayout>
+                android:layout_height="wrap_content"></android.support.v7.widget.RecyclerView>
             <com.example.user.live.view.StaticListView
                 android:id="@+id/lv_finish"
                 android:layout_width="match_parent"
@@ -28,5 +27,5 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"></com.example.user.live.view.StaticListView>
         </LinearLayout>
-    </ScrollView>
+    </android.support.v4.widget.NestedScrollView>
 </LinearLayout>
