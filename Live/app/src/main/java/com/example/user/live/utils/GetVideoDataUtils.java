@@ -91,6 +91,7 @@ public class GetVideoDataUtils {
                     info.setThumbPath(thumbCursor.getString(thumbCursor
                             .getColumnIndex(MediaStore.Video.Thumbnails.DATA)));
                 }
+                thumbCursor.close();
                 String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA));
                 String size = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE));
                 String titleName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE));

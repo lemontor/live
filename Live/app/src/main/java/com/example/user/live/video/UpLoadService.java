@@ -10,12 +10,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import com.example.user.live.R;
 import com.example.user.live.utils.FtpUpLoadUtils;
 import com.example.user.live.video.entity.FromActivityEventBean;
+import com.example.user.live.video.entity.FromServiceEventBean;
 import com.example.user.live.video.entity.FromUploadEventBean;
 import com.example.user.live.video.entity.FtpUploadInfoEntity;
 import com.example.user.live.video.entity.VideoEntity;
@@ -40,30 +43,50 @@ public class UpLoadService extends Service {
     private int videoSize;
     private String upLoadFileName;
     private List<VideoEntity> videoEntityList;
+    private FtpUpLoadUtils ftpUpLoadUtils;
+    private long size;
+    private String fileName;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void fromActivityEvent(FromActivityEventBean activityEventBean) {
-
+        if (activityEventBean != null) {
+            if (activityEventBean.getEvent() == 1) {//开始
+                notification.contentView.setProgressBar(R.id.pro, 100, 0, false);//重新初始化notification的显示
+                notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+                //当前的index暂停
+                index = activityEventBean.getPoi();//记录当前正在上传的视频下标
+                Log.e("tag_index", index + "");
+                ftpUpLoadUtils.reUpload();
+            } else if (activityEventBean.getEvent() == 2) {//暂停
+                notification.contentView.setTextViewText(R.id.tv_start, "开始");
+                ftpUpLoadUtils.abortDataTransfer();
+            }
+            notificationManager.notify(1, notification);
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void fromUpLoadEvent(FromUploadEventBean fromUploadEventBean) {
-         if(fromUploadEventBean != null){
-             if(fromUploadEventBean.getType() == 1){//开始
-                 notification.contentView.setTextViewText(R.id.tv_start,"暂停");
-             }else if(fromUploadEventBean.getType() == 2){//上传中
-                 notification.contentView.setTextViewText(R.id.tv_start,"暂停");
-                 notification.contentView.setProgressBar(R.id.pro,100,fromUploadEventBean.getProgress(),false);
-             }else if(fromUploadEventBean.getType() == 3){//完成
-                 notification.contentView.setProgressBar(R.id.pro,100,0,false);
-                 notification.contentView.setTextViewText(R.id.tv_start,"开始");
-             }else if(fromUploadEventBean.getType() == 4){//失败
-                 notification.contentView.setTextViewText(R.id.tv_start,"开始");
-             }else if(fromUploadEventBean.getType() == 5){//终止
-                 notification.contentView.setTextViewText(R.id.tv_start,"开始");
-             }
-             notificationManager.notify(1,notification);
-         }
+        if (fromUploadEventBean != null) {
+            if (fromUploadEventBean.getType() == 1) {//开始
+                notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+                clickStatus = 0;
+            } else if (fromUploadEventBean.getType() == 2) {//上传中
+                notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+                notification.contentView.setProgressBar(R.id.pro, 100, fromUploadEventBean.getProgress(), false);
+            } else if (fromUploadEventBean.getType() == 3) {//完成
+                notification.contentView.setProgressBar(R.id.pro, 100, 0, false);
+                notification.contentView.setTextViewText(R.id.tv_start, "开始");
+                clickStatus = 1;
+            } else if (fromUploadEventBean.getType() == 4) {//失败
+                notification.contentView.setTextViewText(R.id.tv_start, "开始");
+                clickStatus = 1;
+            } else if (fromUploadEventBean.getType() == 5) {//终止
+                notification.contentView.setTextViewText(R.id.tv_start, "开始");
+                clickStatus = 1;
+            }
+            notificationManager.notify(1, notification);
+        }
     }
 
 
@@ -77,12 +100,19 @@ public class UpLoadService extends Service {
     }
 
     private void initData() {
+        ftpUpLoadUtils = new FtpUpLoadUtils();
         VideoTotalEntity stickyEvent = EventBus.getDefault().getStickyEvent(VideoTotalEntity.class);
-        Log.e("tag_data_service", stickyEvent.toString() + "");
         if (stickyEvent != null) {
             videoSize = stickyEvent.getVideoEntities().size();
             upLoadFileName = stickyEvent.getVideoEntities().get(0).getPath();
+            size = stickyEvent.getVideoEntities().get(0).getLen();
+            fileName = stickyEvent.getVideoEntities().get(0).getTitle();
             videoEntityList = stickyEvent.getVideoEntities();
+            index = 0;
+            FromServiceEventBean fromServiceEventBean = new FromServiceEventBean();
+            fromServiceEventBean.setEvent(3);
+            fromServiceEventBean.setPoi(0);
+            EventBus.getDefault().post(fromServiceEventBean);
         }
     }
 
@@ -94,15 +124,18 @@ public class UpLoadService extends Service {
         infoEntity.password = "study1";
         infoEntity.port = 21;
         infoEntity.path = upLoadFileName;
-        infoEntity.serverPath = "/video/dev/android/";
-        final FtpUpLoadUtils ftpUpLoadUtils = new FtpUpLoadUtils();
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                ftpUpLoadUtils.uploadFile(UpLoadService.this, infoEntity);
-            }
-        }.start();
+//        infoEntity.serverPath = "/video/dev/android/";
+        infoEntity.serverPath = "/mnt/sdc/storage/video/dev/android/";
+        infoEntity.len = size;
+        infoEntity.fileName = fileName;
+        clickStatus = 1;//初始化状态为暂停
+//        new Thread(){
+//            @Override
+//            public void run() {
+//                super.run();
+        ftpUpLoadUtils.uploadFile(UpLoadService.this, infoEntity);
+//            }
+//        }.start();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -133,11 +166,33 @@ public class UpLoadService extends Service {
         startForeground(1, notification);//前台运行
     }
 
+    int clickStatus;//0：显示开始（还没有上传）； 1：显示暂停（正在上传中）；
+
     private BroadcastReceiver receiver_onclick = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             Log.e("tag_action", action + "");
+            if (action.equals(START_UP)) {
+                FromServiceEventBean fromServiceEventBean = new FromServiceEventBean();
+                if (clickStatus == 0) {
+                    clickStatus = 1;
+                    notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+                    fromServiceEventBean.setEvent(1);
+                    fromServiceEventBean.setPoi(index);
+                    EventBus.getDefault().post(fromServiceEventBean);
+                } else if (clickStatus == 1) {
+                    clickStatus = 0;
+                    notification.contentView.setTextViewText(R.id.tv_start, "开始");
+                    fromServiceEventBean.setEvent(2);
+                    fromServiceEventBean.setPoi(index);
+                    EventBus.getDefault().post(fromServiceEventBean);
+                }
+                notificationManager.notify(1, notification);
+            } else {
+                //关闭前台服务之前需要关闭上传操作
+                stopForeground(true);
+            }
         }
     };
 
@@ -145,6 +200,8 @@ public class UpLoadService extends Service {
     public void onDestroy() {
         EventBus.getDefault().unregister(this);
         super.onDestroy();
-
+        stopForeground(true);
     }
+
+
 }

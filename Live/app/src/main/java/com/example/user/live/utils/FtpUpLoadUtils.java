@@ -19,18 +19,23 @@ import org.greenrobot.eventbus.EventBus;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
 import it.sauronsoftware.ftp4j.FTPClient;
 import it.sauronsoftware.ftp4j.FTPDataTransferListener;
+import it.sauronsoftware.ftp4j.FTPFile;
 import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
 
 /**
  * Created by user on 2018/5/18.
- ftp_ip: 49.4.15.103
- ftp_port: 21
- ftp_user: study1
- ftp_pwd: study1
- ftp_base_path: /mnt/sdc/storage/video/dev/andriod
+ * ftp_ip: 49.4.15.103
+ * ftp_port: 21
+ * ftp_user: study1
+ * ftp_pwd: study1
+ * ftp_base_path: /mnt/sdc/storage/video/dev/andriod
  */
 public class FtpUpLoadUtils {
 
@@ -47,9 +52,11 @@ public class FtpUpLoadUtils {
     private String password;    //登录FTP服务器密码
     private String path;        //需上传的文件的完整路径
     private String serverPath;      //服务端存储路径（根路径为/）
+    private long   len;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
     private BroadcastReceiver connctionChangeReceiver;
+    private String fileName;
 
     private static final String BREAKPOINT_INFO = "breakpointinfo";  //SharedPreferences里存储断点信息的对象名
     private static final String TEXT_CHARSET = "utf8"; //字符编码
@@ -67,6 +74,8 @@ public class FtpUpLoadUtils {
         password = entity.password;
         path = entity.path;
         serverPath = entity.serverPath;
+        fileName = entity.fileName;
+        len = entity.len;
         Log.e(TAG, "ip:" + ip + "," + "port:" + port + "," + "usrName:" + userName + "," + "password:" + password + "serverPath:" + serverPath + "," + "path:" + path);
         if (path == null || "".equals(path.trim()) || new File(path).isDirectory() || !new File(path).exists()) {
             Log.e(TAG, "File is not exsist");
@@ -74,36 +83,59 @@ public class FtpUpLoadUtils {
         }
         packageFile = new File(path);
         fileSize = packageFile.length();
-        IntentFilter filter = new IntentFilter(CONNECTIVITY_CHANGE_ACTION);
-        BroadcastReceiver connctionChangeReceiver = new ConnectionChangeReceiver();
-        context.registerReceiver(new ConnectionChangeReceiver(), filter);
         //检索并获得名字为BREAKPOINT_INFO的SharedPreferences对象
         preferences = context.getSharedPreferences(BREAKPOINT_INFO, context.MODE_PRIVATE);
+        ftp = new FTPClient();
         editor = preferences.edit();
+        df = new DecimalFormat("#.0");
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+//        ftpUpLoadUtils.uploadFile(UpLoadService.this, infoEntity);
+                initConnection(ip, port, userName, password);
 
-        initConnection(ip, port, userName, password);
+            }
+        }.start();
+//        initConnection(ip, port, userName, password);
         return null;
     }
 
+    DecimalFormat df;
+
     private void initConnection(String ip, int port, String userName, String password) {
         try {
-            ftp = new FTPClient();
-            Log.e(TAG, "ip:" + ip + "," + "port:" + port + "," + "usrName:" + userName + "," + "password:" + password);
             ftp.connect(ip, port);
-            Log.e(TAG, ftp.toString());
             ftp.login(userName, password);
-            ftp.setType(FTPClient.TYPE_AUTO);//设置传输的类型
+            ftp.setType(FTPClient.TYPE_BINARY);//设置传输的类型
             ftp.setCharset(TEXT_CHARSET);
             ftp.setPassive(true);
-            boolean  isCompression = ftp.isCompressionSupported();
-            if(isCompression){
+            String realName = fileName+".mp4";
+//            getListFiles(ftp,"");
+//            long size = ftp.fileSize(realName);
+//            Log.e("tag_len",len+"");
+            boolean isAdd = false;
+//            if(len == size){
+//                Log.e("tag_","已经上传过了。。。");
+//                return ;
+//            }else{
+//                if(len > size){
+//                    isAdd = true;
+//                }else{
+//                    isAdd = false;
+//                }
+//            }
+            boolean isCompression = ftp.isCompressionSupported();
+            if (isCompression) {
                 ftp.setCompressionEnabled(true);
             }
             //更改服务端当前目录
-            String dir = ftp.currentDirectory();
-            Log.e("tag_dir",dir+"");
-//            ftp.changeDirectory(serverPath);
+//            String dir = ftp.currentDirectory();
+            ftp.changeDirectory(serverPath);
+            IntentFilter filter = new IntentFilter(CONNECTIVITY_CHANGE_ACTION);
             asynUpload();
+            BroadcastReceiver connctionChangeReceiver = new ConnectionChangeReceiver();
+            context.registerReceiver(new ConnectionChangeReceiver(), filter);
         } catch (Exception e) {
             Log.e("MyFTPClient", e.getMessage());
         }
@@ -218,7 +250,7 @@ public class FtpUpLoadUtils {
             if (ftp.isResumeSupported()) {
                 Log.e("MyFTPClient", "ftpServerSupport!");
                 try {
-                    ftp.changeDirectory(currentDirectory);
+//                    ftp.changeDirectory(currentDirectory);
                     ftp.upload(packageFile, uploadSize, new MyTransferListener());
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -232,20 +264,20 @@ public class FtpUpLoadUtils {
 
 
     /**
-     *
      * TODO 数据上传监听器
      * 2012-1-10 下午5:34:01
-     * @author zhuoran.xu
      *
+     * @author zhuoran.xu
      */
     public class MyTransferListener implements FTPDataTransferListener {
 
         long percent = 0L;
+
         //传输中止时触发
         public void aborted() {
-            Log.e("MyFTPClient","file aborted");
-            Log.e("MyFTPClient","MyFTPClientaborted:" + uploadSize);
-            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            Log.e("MyFTPClient", "file aborted");
+            Log.e("MyFTPClient", "MyFTPClientaborted:" + uploadSize);
+            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
             fromUploadEventBean.setEventType(2);
             fromUploadEventBean.setProgress(0);
             fromUploadEventBean.setType(5);
@@ -254,9 +286,11 @@ public class FtpUpLoadUtils {
             disconnect();
             context.unregisterReceiver(connctionChangeReceiver);
         }
+
         //文件传输完成时，触发
         public void completed() {
-            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            Log.e("MyFTPClient", "file completed");
+            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
             fromUploadEventBean.setEventType(2);
             fromUploadEventBean.setProgress(0);
             fromUploadEventBean.setType(3);
@@ -264,7 +298,7 @@ public class FtpUpLoadUtils {
             //文件传输完成时，将已上传文件大小置空
             uploadSize = 0;
             String fileName = getFileName(path);
-            String [] keys = getKeys(fileName);
+            String[] keys = getKeys(fileName);
             //文件传输完成时，将本地化信息清空。
             editor.remove(fileName);
             editor.remove(keys[0]);
@@ -277,65 +311,86 @@ public class FtpUpLoadUtils {
             intent.setAction(UPLOAD_COMPLETED_ACTION);
             intent.putExtra("path", path);
             context.sendBroadcast(intent);
-            Log.e("MyFTPClient","file completed");
         }
+
         //传输失败时触发
         public void failed() {
-            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            Log.e("MyFTPClient", "file failed");
+            Log.e("MyFTPClient", "MyFTPClientFailed:" + uploadSize);
+            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
             fromUploadEventBean.setEventType(2);
             fromUploadEventBean.setProgress(0);
             fromUploadEventBean.setType(4);
             EventBus.getDefault().post(fromUploadEventBean);
-            Log.e("MyFTPClient","file failed");
-            Log.e("MyFTPClient","MyFTPClientFailed:"+uploadSize);
             saveBreakpointInfo();
             disconnect();
             context.unregisterReceiver(connctionChangeReceiver);
         }
+
         //文件开始上传或下载时触发
         public void started() {
-            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            Log.e("MyFTPClient", "file start");
+            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
             fromUploadEventBean.setEventType(2);
             fromUploadEventBean.setProgress(0);
             fromUploadEventBean.setType(1);
             EventBus.getDefault().post(fromUploadEventBean);
-            Log.e("MyFTPClient","file start");
         }
+
         //显示已经传输的字节数
         public void transferred(int arg0) {
             uploadSize += arg0;
-            percent = (long)(uploadSize*100/(fileSize*1.0));
-            FromUploadEventBean  fromUploadEventBean  = new FromUploadEventBean();
+            percent = (long) (uploadSize * 100 / (fileSize * 1.0));
+            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
             fromUploadEventBean.setEventType(2);
             fromUploadEventBean.setProgress((int) percent);
-            fromUploadEventBean.setLen(uploadSize);
+            double mSize = (double) uploadSize / (1024 * 1024);
+            fromUploadEventBean.setLen(df.format(mSize));
             fromUploadEventBean.setType(2);
             EventBus.getDefault().post(fromUploadEventBean);
-            Log.e("MyFTPClient","percent:"+percent+"%  UploadSize:"+uploadSize+"byte");
+            Log.e("MyFTPClient", "percent:" + percent + "%  UploadSize:" + uploadSize + "byte");
         }
     }
+
+    public  List<FTPFile> getListFiles(FTPClient client, String path) {
+        List<FTPFile> filesList = new ArrayList<FTPFile>();
+        try {
+//            client.changeDirectory(path);
+            FTPFile[] fileNames = client.list(); //.listNames();
+            if (null != fileNames) {
+                for (FTPFile file : fileNames) {
+                    if(file.getType() == FTPFile.TYPE_FILE){
+                        filesList.add(file);
+                        Log.e("tag_list",file.getName()+":"+file.getSize());
+                        //System.out.println(file.getName()+" | "+file.getSize()+" | "+DateUtil.converDateToString(file.getModifiedDate(),DateUtil.defaultDatePattern));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("###[Error] FTPToolkit.getlistFiles()"+ e.getMessage());
+        }
+        return filesList;
+    }
+
+
     /**
-     *
      * TODO 终止数据的上传，在上传线程中调用无效，需在其他线程中调用。
      */
-    private void abortDataTransfer() {
+    public void abortDataTransfer() {
         try {
             ftp.abortCurrentDataTransfer(false);
         } catch (IOException e1) {
-// TODO Auto-generated catch block
             e1.printStackTrace();
         } catch (FTPIllegalReplyException e1) {
-// TODO Auto-generated catch block
             e1.printStackTrace();
         }
     }
 
     /**
-     *
      * TODO 断开和服务端的连接
      */
     private void disconnect() {
-        if(ftp != null){
+        if (ftp != null) {
             try {
                 ftp.disconnect(false);
             } catch (Exception e) {
@@ -344,30 +399,44 @@ public class FtpUpLoadUtils {
         }
     }
 
+    /*
+    续传
+     */
+    public void reUpload() {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                initConnection(ip, port, userName, password);
+            }
+        }.start();
+    }
+
+
     /**
-     *
      * TODO 根据路径获取文件名
+     *
      * @param path
      * @return
      */
-    private String getFileName(String path){
+    private String getFileName(String path) {
         String fileName = null;
         path = path.trim();
-        fileName = path.substring(path.lastIndexOf("/")+1);
+        fileName = path.substring(path.lastIndexOf("/") + 1);
         return fileName;
     }
+
     /**
-     *
      * TODO 往SharedPreferences中存储断点信息，以要上传的文件名（UUID）为Key
      */
     private void saveBreakpointInfo() {
         String fileName = getFileName(path);
         Log.e(TAG, "fileName:" + fileName);
         Log.e(TAG, "saveBreakpointInfo");
-        String [] keys = getKeys(fileName);
+        String[] keys = getKeys(fileName);
         //拼接要存入的断点信息
         try {
-//将断点信息存入
+            //将断点信息存入
             editor.putString(fileName, fileName);
             editor.putString(keys[0], path);
             editor.putString(keys[1], serverPath);
@@ -378,38 +447,62 @@ public class FtpUpLoadUtils {
             e.printStackTrace();
         }
     }
+
     /**
-     *
      * TODO 构造存入sharedPreferences里的key值
+     *
      * @param fileName
      * @return
      */
-    private String [] getKeys(String fileName){
+    private String[] getKeys(String fileName) {
         String keyPath = fileName + "_Path";//sharedPreferences里保存文件路径的key
         String keyServerPath = fileName + "_ServerPath";//sharedPreferences里保存服务端存储路径的key
         String keyUploadSize = fileName + "_UploadSize";//sharedPreferences里保存已上传文件大小的key
-        String [] keys = {keyPath ,keyServerPath ,keyUploadSize};
+        String[] keys = {keyPath, keyServerPath, keyUploadSize};
         return keys;
     }
 
 
     /**
-     *
      * TODO 网络状态广播接收者
      * 2012-1-11 下午5:54:06
-     * @author zhuoran.xu
      *
+     * @author zhuoran.xu
      */
     class ConnectionChangeReceiver extends BroadcastReceiver {
         private static final String TAG = "ConnectionChangeReceiver";
+
         @Override
         public void onReceive(Context context, Intent intent) {
-            ConnectivityManager connectivityManager =(ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
             NetworkInfo mobNetInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
             if (activeNetInfo != null && activeNetInfo.isConnected()) {
                 Toast.makeText(context, "Active Network Type : " + activeNetInfo.getTypeName(), Toast.LENGTH_SHORT).show();
-            }else{
+                switch (activeNetInfo.getType()) {
+                    case ConnectivityManager.TYPE_MOBILE:
+                        FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
+                        fromUploadEventBean.setEventType(2);
+                        fromUploadEventBean.setProgress(0);
+                        fromUploadEventBean.setType(11);
+                        EventBus.getDefault().post(fromUploadEventBean);
+                        break;
+                    case ConnectivityManager.TYPE_WIFI:
+                        FromUploadEventBean fromUploadEventBean1 = new FromUploadEventBean();
+                        fromUploadEventBean1.setEventType(2);
+                        fromUploadEventBean1.setProgress(0);
+                        fromUploadEventBean1.setType(12);
+                        EventBus.getDefault().post(fromUploadEventBean1);
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
+                fromUploadEventBean.setEventType(2);
+                fromUploadEventBean.setProgress(0);
+                fromUploadEventBean.setType(10);
+                EventBus.getDefault().post(fromUploadEventBean);
                 try {
                     ftp.abortCurrentDataTransfer(false);
                 } catch (IOException e) {
@@ -418,13 +511,8 @@ public class FtpUpLoadUtils {
                     e.printStackTrace();
                 }
             }
-//	if (mobNetInfo != null){
-//	Toast.makeText(context, "Mobile Network Type : " + mobNetInfo.getTypeName(), 1).show();
-//	}
         }
     }
-
-
 
 
 }

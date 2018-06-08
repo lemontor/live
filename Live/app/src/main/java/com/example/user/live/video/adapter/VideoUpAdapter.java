@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -19,7 +20,7 @@ import java.util.List;
 /**
  * Created by user on 2018/6/5.
  */
-public class VideoUpAdapter extends RecyclerView.Adapter<VideoUpAdapter.UpViewHolder> {
+public class VideoUpAdapter extends BaseAdapter{
 
     private Context context;
     private List<VideoEntity> videoEntityList;
@@ -33,22 +34,47 @@ public class VideoUpAdapter extends RecyclerView.Adapter<VideoUpAdapter.UpViewHo
     }
 
     @Override
-    public UpViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new UpViewHolder(inflater.inflate(R.layout.item_video_upload, null));
+    public int getCount() {
+        return videoEntityList.size();
     }
 
     @Override
-    public void onBindViewHolder(UpViewHolder holder, final int position) {
+    public Object getItem(int i) {
+        return videoEntityList.get(i);
+    }
+
+    @Override
+    public long getItemId(int i) {
+        return i;
+    }
+
+    @Override
+    public View getView(final int position, View view, ViewGroup viewGroup) {
+        UpViewHolder holder = null;
+        if(view == null){
+            view = inflater.inflate(R.layout.item_video_upload, null);
+            holder  = new UpViewHolder(view);
+            view.setTag(holder);
+        }else{
+            holder = (UpViewHolder) view.getTag();
+        }
+
         GlideUtils.loadLocalPic(context, videoEntityList.get(position).getThumbPath(), holder.ivPic);
         holder.tvTitle.setText(videoEntityList.get(position).getTitle());
         holder.tvTotalProgress.setText("/" + videoEntityList.get(position).getSize());
         holder.tvLoadingProgress.setText(String.valueOf(videoEntityList.get(position).getProgress()));
-        holder.pbLoading.setPercent(position * 10 + 20);
+        holder.pbLoading.setPercent(videoEntityList.get(position).getProgress());
         if (videoEntityList.get(position).getStatus() == 2) {//正在上传
             holder.tvLoadingStatus.setText("正在下载");
             holder.ivStart.setImageResource(R.mipmap.spsc_zhengzaishangchuan);
         } else if (videoEntityList.get(position).getStatus() == 6) {//暂停
             holder.tvLoadingStatus.setText("已暂停");
+            holder.ivStart.setImageResource(R.mipmap.spsc_zanting);
+        } else if (videoEntityList.get(position).getStatus() == 8) {//网络不可用
+            holder.tvLoadingStatus.setText("网络不可用已暂停");
+            holder.ivStart.setImageResource(R.mipmap.spsc_zanting);
+        } else if (videoEntityList.get(position).getStatus() == 9) {//非wifi环境下
+            holder.tvLoadingStatus.setText("非wifi环境已暂停");
             holder.ivStart.setImageResource(R.mipmap.spsc_zanting);
         } else {//等待中
             holder.tvLoadingStatus.setText("等待中...");
@@ -64,23 +90,18 @@ public class VideoUpAdapter extends RecyclerView.Adapter<VideoUpAdapter.UpViewHo
                 }
             }
         });
+
+        return view;
     }
 
-    @Override
-    public int getItemCount() {
-        return videoEntityList.size();
-    }
-
-    public class UpViewHolder extends RecyclerView.ViewHolder {
+    public class UpViewHolder  {
         private ImageView ivPic, ivStart;
         private TextView tvTitle, tvLoadingProgress, tvTotalProgress, tvLoadingStatus;
         private CustomProgressBar pbLoading;
 
         public UpViewHolder(View itemView) {
-            super(itemView);
             ivPic = (ImageView) itemView.findViewById(R.id.iv_pic);
             ivStart = (ImageView) itemView.findViewById(R.id._iv_start);
-
             tvTitle = (TextView) itemView.findViewById(R.id.tv_title);
             tvLoadingProgress = (TextView) itemView.findViewById(R.id.tv_load);
             tvTotalProgress = (TextView) itemView.findViewById(R.id.tv_total);

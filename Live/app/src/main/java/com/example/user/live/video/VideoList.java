@@ -93,7 +93,9 @@ public class VideoList extends Activity {
                      VideoTotalEntity totalEntity = new VideoTotalEntity();
                     totalEntity.setVideoEntities(data);
                     totalEntity.getVideoEntities().get(0).setStatus(2);
-                    totalEntity.getVideoEntities().get(1).setStatus(6);
+                    if(totalEntity.getVideoEntities().size() >=2){
+                        totalEntity.getVideoEntities().get(1).setStatus(6);
+                    }
                     Intent intent = new Intent(VideoList.this,VideoUpLoad.class);
                     intent.putExtra("video",totalEntity);
                     startActivity(intent);

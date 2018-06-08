@@ -10,5 +10,6 @@ public class FtpUploadInfoEntity {
     public String  password;
     public String  path;
     public String  serverPath;
-
+    public String  fileName;
+    public long   len;
 }

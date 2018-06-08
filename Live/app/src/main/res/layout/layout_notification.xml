@@ -6,13 +6,21 @@
     android:paddingLeft="@dimen/dimen_20"
     android:background="@android:color/white"
     >
+    <ImageView
+        android:id="@+id/iv_icon"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@mipmap/icon"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="5dp"/>
     <ProgressBar
         android:id="@+id/pro"
         android:layout_width="match_parent"
-        android:layout_height="10dp"
+        android:layout_height="5dp"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:max="100"
         android:layout_below="@+id/tv_dismiss"
+        android:layout_toRightOf="@+id/iv_icon"
         />
 
     <TextView
@@ -26,14 +34,25 @@
         android:textColor="@color/color_E75B5B"
         android:drawableLeft="@mipmap/close_two"/>
 
-    <TextView
-        android:id="@+id/tv_start"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="30dp"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@+id/iv_icon"
         android:layout_below="@+id/pro"
-        android:text="开始"
-        android:textColor="@color/color_999999"
-        android:gravity="center"
-        android:textSize="@dimen/text_size_32"/>
+        >
+        <TextView
+            android:id="@+id/tv_start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="暂停"
+            android:textColor="@color/color_999999"
+            android:layout_centerVertical="true"
+            android:textSize="@dimen/text_size_32"
+            android:layout_gravity="center"
+            android:gravity="center"
+            />
+    </FrameLayout>
+
+
 
 </RelativeLayout>

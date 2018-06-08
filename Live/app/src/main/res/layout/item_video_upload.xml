@@ -72,8 +72,8 @@
             android:layout_height="match_parent" />
         <ImageView
             android:id="@+id/_iv_start"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_gravity="center"
             android:src="@mipmap/spsc_zhengzaishangchuan"
             />

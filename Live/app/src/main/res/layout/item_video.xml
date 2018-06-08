@@ -55,5 +55,14 @@
             android:textSize="@dimen/text_size_28"
             android:paddingLeft="@dimen/dimen_24"/>
     </LinearLayout>
+    <ImageView
+        android:id="@+id/iv_reset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@mipmap/spsc_chongxinshangchuan"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="13dp"
+        android:layout_centerVertical="true"
+        android:visibility="gone"/>
 
 </RelativeLayout>

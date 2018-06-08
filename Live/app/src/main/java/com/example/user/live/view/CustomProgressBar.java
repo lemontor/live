@@ -46,6 +46,7 @@ public class CustomProgressBar extends View {
         DecimalFormat df = new DecimalFormat("0.00");//格式化小数,保留两位小数
         String num = df.format((float) percent / 100);//返回的是String类型
         this.percent = (int) (Float.valueOf(num) * 360);
+        invalidate();
     }
 
     @Override

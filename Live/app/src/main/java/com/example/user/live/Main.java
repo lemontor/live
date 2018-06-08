@@ -1,6 +1,12 @@
 package com.example.user.live;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -8,7 +14,9 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.user.live.live.LiveFragment;
 import com.example.user.live.utils.ToastUtils;
@@ -26,6 +34,10 @@ public class Main extends AppCompatActivity {
     private TextView tvLive, tvVideo;
     private String useId;
     private Drawable drawable;
+    private IntentFilter intentFilter;
+    private NetworkChangeReceiver networkChangeReceiver;
+    private FrameLayout  layoutNotify;
+    private TextView  tvNetNotify;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +75,11 @@ public class Main extends AppCompatActivity {
     }
 
     private void initObj() {
+        intentFilter = new IntentFilter();
+        intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        networkChangeReceiver = new NetworkChangeReceiver();
+        registerReceiver(networkChangeReceiver, intentFilter);
+
         useId = getIntent().getStringExtra("useId");
         fragmentManager = getSupportFragmentManager();
         liveFragment = new LiveFragment();
@@ -77,6 +94,8 @@ public class Main extends AppCompatActivity {
         tvLive = (TextView) findViewById(R.id.rb_live);
         tvVideo = (TextView) findViewById(R.id.rv_video);
         drawable = getResources().getDrawable(R.drawable.rectangle);
+        layoutNotify = (FrameLayout) findViewById(R.id.layout_notify);
+        tvNetNotify = (TextView) findViewById(R.id.tv_notify_net);
     }
 
     private void showFragment(Fragment fragment) {
@@ -92,6 +111,30 @@ public class Main extends AppCompatActivity {
         }
     }
 
+    class NetworkChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+            if (networkInfo != null && networkInfo.isAvailable()) {
+                switch (networkInfo.getType()) {
+                    case ConnectivityManager.TYPE_MOBILE:
+                        layoutNotify.setVisibility(View.VISIBLE);
+                        break;
+                    case ConnectivityManager.TYPE_WIFI:
+                        layoutNotify.setVisibility(View.GONE);
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                layoutNotify.setVisibility(View.VISIBLE);
+                tvNetNotify.setText("当前网络不可用");
+            }
+        }
+    }
+
+
     private long exitTime; //记录手机返回按键的时间间隔
 
     @Override
@@ -103,11 +146,15 @@ public class Main extends AppCompatActivity {
             } else {
                 int pid = android.os.Process.myPid();    //获取当前应用程序的PID
                 android.os.Process.killProcess(pid);    //杀死当前进程
-//                HuatecApplication.getInstance().exit();
             }
             return true;
         }
         return super.onKeyDown(keyCode, event);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(networkChangeReceiver);
+    }
 }
