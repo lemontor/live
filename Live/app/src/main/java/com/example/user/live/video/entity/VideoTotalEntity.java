@@ -47,4 +47,9 @@ public class VideoTotalEntity implements Serializable{
                 ", isChose=" + isChose +
                 '}';
     }
+
+
+
+
+
 }

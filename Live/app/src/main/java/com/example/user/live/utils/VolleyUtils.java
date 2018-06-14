@@ -118,9 +118,47 @@ public class VolleyUtils {
         };
         stringRequest.setTag(tag);
         App.addVolleyQueue(stringRequest);
-
     }
 
+
+    public static void stringRequestWithGet(String tag, final String url, final OnVolleyListener listener) {
+        App.removeVolleyQueue(tag);
+        stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                listener.onResponse(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                listener.onErrorResponse(error);
+                Log.e("tag_error", error.getLocalizedMessage() + "   " + error.getMessage());
+            }
+        }) {
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headParams = new HashMap<>();
+                return headParams;
+            }
+
+            @Override
+            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                String parsed;
+                try {
+                    Map<String, String> responseHeaders = response.headers;
+                    String info = responseHeaders.get("Set-Cookie");
+                    Log.e("tag_cookie", info + "  url=" + url);
+                    parsed = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
+                } catch (UnsupportedEncodingException e) {
+                    parsed = new String(response.data);
+                }
+                return Response.success(parsed, HttpHeaderParser.parseCacheHeaders(response));
+            }
+        };
+        stringRequest.setTag(tag);
+        App.addVolleyQueue(stringRequest);
+    }
 
     public interface OnVolleyListener {
         void onResponse(String response);
@@ -294,6 +332,47 @@ public class VolleyUtils {
         });
     }
 
+
+    public void getVideoList(String userId,final OnVolleyListener listener){
+        String url = ConstantUtils.VIDEO_LIST+"?userId="+userId+"&fromMark="+2;
+        stringRequestWithGet(url, url, new OnVolleyListener() {
+            @Override
+            public void onResponse(String response) {
+                listener.onResponse(response);
+            }
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                listener.onErrorResponse(error);
+            }
+        });
+    }
+
+
+    public void upVideoInfo(String fileName,String path,String userId,long size,String videoTime,String thumb,final OnVolleyListener listener){
+        Map<String, String> params = new HashMap<>();
+        params.put("fileName", fileName);
+        params.put("path", path);
+        params.put("userId",userId);
+        params.put("size", String.valueOf(size));
+        params.put("videoTime", videoTime);
+        params.put("fromMark", "2");
+        params.put("picUrl", thumb);
+        String url = ConstantUtils.VIDEO_INFO;
+        stringRequestWithPost(url, url, params, new OnVolleyListener() {
+            @Override
+            public void onResponse(String response) {
+                listener.onResponse(response);
+
+            }
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                listener.onErrorResponse(error);
+
+            }
+        });
+    }
 
 
 }

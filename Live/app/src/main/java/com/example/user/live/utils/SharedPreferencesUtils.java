@@ -23,8 +23,8 @@ public class SharedPreferencesUtils {
         editor.apply();
     }
 
-    public void getString(String key){
-        sharedPreferences.getString(key,"");
+    public String getString(String key){
+        return sharedPreferences.getString(key,"");
     }
 
     public void clear(String key){

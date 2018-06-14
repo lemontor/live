@@ -29,6 +29,8 @@ import com.example.user.live.bean.CustomMessage;
 import com.example.user.live.jpush.utils.ExampleUtil;
 import com.example.user.live.live.DemoActivity;
 import com.example.user.live.live.LiveCameraActivity;
+import com.example.user.live.utils.ConstantUtils;
+import com.example.user.live.utils.SharedPreferencesUtils;
 import com.example.user.live.utils.VolleyUtils;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView  mWebView;
     String targetUrl = "http://210.12.56.75:8777/mobile/index.html";
 //    String targetUrl = "http://study.huatec.com/mobile/index.html";
+    private SharedPreferencesUtils sharedPreferencesUtils;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,11 +79,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initListener() {
-        WebAppInterface webAppInterface = new WebAppInterface(this);
-        mWebView.addJavascriptInterface(webAppInterface,"Android");
+//        WebAppInterface webAppInterface = new WebAppInterface(this);
+//        mWebView.addJavascriptInterface(webAppInterface,"Android");
 
-//        AppInterface appInterface = new AppInterface(this);
-//        mWebView.addJavascriptInterface(appInterface,"Android");
+        AppInterface appInterface = new AppInterface(this);
+        mWebView.addJavascriptInterface(appInterface,"Android");
 
         mWebView.loadUrl(targetUrl);
         mWebView.setWebViewClient(new WebViewClient(){
@@ -115,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private  void  initUI(){
+        sharedPreferencesUtils = new SharedPreferencesUtils(this);
         mLayoutContent = (LinearLayout) findViewById(R.id.layout_content);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         mWebView = new WebView(getApplicationContext());
@@ -157,6 +161,8 @@ public class MainActivity extends AppCompatActivity {
 
         @android.webkit.JavascriptInterface
         public void login(String useId){
+            Log.e("tag_login","login");
+            sharedPreferencesUtils.putString(ConstantUtils.USER_ID,useId);
             Intent  intent = new Intent(MainActivity.this,Main.class);
             intent.putExtra("useId",useId);
             startActivity(intent);

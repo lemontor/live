@@ -39,7 +39,6 @@ import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
  */
 public class FtpUpLoadUtils {
 
-    private FTPClient ftp;    //ftp客户端
     private UploadThread thread;    //上传线程
     private Thread continueThread;    //断点上传线程
     private File packageFile;    //需上传的文件
@@ -52,7 +51,7 @@ public class FtpUpLoadUtils {
     private String password;    //登录FTP服务器密码
     private String path;        //需上传的文件的完整路径
     private String serverPath;      //服务端存储路径（根路径为/）
-    private long   len;
+    private long len;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
     private BroadcastReceiver connctionChangeReceiver;
@@ -64,6 +63,7 @@ public class FtpUpLoadUtils {
     //网络状态改变ACTION
     private static final String CONNECTIVITY_CHANGE_ACTION = "android.net.conn.CONNECTIVITY_CHANGE";
     private static final String TAG = "FTPUpload";
+    private FtpUploadInfoEntity entity;
 
 
     public String uploadFile(Context context, FtpUploadInfoEntity entity) {
@@ -85,7 +85,6 @@ public class FtpUpLoadUtils {
         fileSize = packageFile.length();
         //检索并获得名字为BREAKPOINT_INFO的SharedPreferences对象
         preferences = context.getSharedPreferences(BREAKPOINT_INFO, context.MODE_PRIVATE);
-        ftp = new FTPClient();
         editor = preferences.edit();
         df = new DecimalFormat("#.0");
         new Thread() {
@@ -102,29 +101,16 @@ public class FtpUpLoadUtils {
     }
 
     DecimalFormat df;
-
+    FTPClient ftp;
+    ConnectionChangeReceiver connectionChangeReceiver;
     private void initConnection(String ip, int port, String userName, String password) {
         try {
+            ftp = new FTPClient();
             ftp.connect(ip, port);
             ftp.login(userName, password);
             ftp.setType(FTPClient.TYPE_BINARY);//设置传输的类型
             ftp.setCharset(TEXT_CHARSET);
             ftp.setPassive(true);
-            String realName = fileName+".mp4";
-//            getListFiles(ftp,"");
-//            long size = ftp.fileSize(realName);
-//            Log.e("tag_len",len+"");
-            boolean isAdd = false;
-//            if(len == size){
-//                Log.e("tag_","已经上传过了。。。");
-//                return ;
-//            }else{
-//                if(len > size){
-//                    isAdd = true;
-//                }else{
-//                    isAdd = false;
-//                }
-//            }
             boolean isCompression = ftp.isCompressionSupported();
             if (isCompression) {
                 ftp.setCompressionEnabled(true);
@@ -132,21 +118,43 @@ public class FtpUpLoadUtils {
             //更改服务端当前目录
 //            String dir = ftp.currentDirectory();
             ftp.changeDirectory(serverPath);
+            String realName = fileName + ".mp4";
+//            getListFiles(ftp,"");
+            boolean isAdd = false;
+            long size = 0;
+            try {
+                size = ftp.fileSize(realName);
+                if (fileSize <= size) {//已经上传过了
+                    Log.e("tag_", "已经上传过了...");
+                    FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
+                    fromUploadEventBean.setEventType(2);
+                    fromUploadEventBean.setProgress(0);
+                    fromUploadEventBean.setType(3);
+                    EventBus.getDefault().post(fromUploadEventBean);
+                    return;
+                } else {
+                    isAdd = true;
+                    Log.e("tag_up_size",size+":"+fileSize);
+                }
+            } catch (Exception e) {
+                isAdd = false;
+            }
             IntentFilter filter = new IntentFilter(CONNECTIVITY_CHANGE_ACTION);
-            asynUpload();
-            BroadcastReceiver connctionChangeReceiver = new ConnectionChangeReceiver();
-            context.registerReceiver(new ConnectionChangeReceiver(), filter);
+            asynUpload(isAdd, size);
+            connectionChangeReceiver = new ConnectionChangeReceiver();
+            context.registerReceiver(connectionChangeReceiver, filter);
         } catch (Exception e) {
-            Log.e("MyFTPClient", e.getMessage());
+//            Log.e("MyFTPClient", e.getMessage());
+          Log.e("tag_ftp","ftp 失败");
         }
     }
 
     /**
      * TODO 上传文件
      */
-    public void asynUpload() {
-        boolean b = isFirstUpload(getFileName(path));
-        if (b) {
+    public void asynUpload(boolean isAdd, long upSize) {
+//        boolean b = isFirstUpload(getFileName(path));
+        if (!isAdd) {
             Log.e(TAG, "is first upload");
             thread = new UploadThread();
             thread.start();
@@ -157,7 +165,8 @@ public class FtpUpLoadUtils {
             String info_serverpath = (String) infos.get("info_serverpath");
             Long info_uploadsize = (Long) infos.get("info_uploadsize");
             uploadSize = info_uploadsize;
-            continueThread = new ContinueUploadThread(info_path, info_serverpath, info_uploadsize);
+            continueThread = new ContinueUploadThread(path, serverPath, upSize);
+//            continueThread = new ContinueUploadThread(info_path, info_serverpath, info_uploadsize);
             continueThread.start();
         }
 // 	此处若传入true，则ftp客户端和服务端交互后再终止传输，则获得的已传输数据量有偏差，客户端记录数量偏大。
@@ -281,10 +290,10 @@ public class FtpUpLoadUtils {
             fromUploadEventBean.setEventType(2);
             fromUploadEventBean.setProgress(0);
             fromUploadEventBean.setType(5);
-            EventBus.getDefault().post(fromUploadEventBean);
-            saveBreakpointInfo();
+//            EventBus.getDefault().post(fromUploadEventBean);
+//            saveBreakpointInfo();
             disconnect();
-            context.unregisterReceiver(connctionChangeReceiver);
+//            context.unregisterReceiver(connctionChangeReceiver);
         }
 
         //文件传输完成时，触发
@@ -339,6 +348,7 @@ public class FtpUpLoadUtils {
 
         //显示已经传输的字节数
         public void transferred(int arg0) {
+            Log.e("tag——————", "transferred");
             uploadSize += arg0;
             percent = (long) (uploadSize * 100 / (fileSize * 1.0));
             FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
@@ -352,22 +362,22 @@ public class FtpUpLoadUtils {
         }
     }
 
-    public  List<FTPFile> getListFiles(FTPClient client, String path) {
+    public List<FTPFile> getListFiles(FTPClient client, String path) {
         List<FTPFile> filesList = new ArrayList<FTPFile>();
         try {
 //            client.changeDirectory(path);
             FTPFile[] fileNames = client.list(); //.listNames();
             if (null != fileNames) {
                 for (FTPFile file : fileNames) {
-                    if(file.getType() == FTPFile.TYPE_FILE){
+                    if (file.getType() == FTPFile.TYPE_FILE) {
                         filesList.add(file);
-                        Log.e("tag_list",file.getName()+":"+file.getSize());
+                        Log.e("tag_list", file.getName() + ":" + file.getSize());
                         //System.out.println(file.getName()+" | "+file.getSize()+" | "+DateUtil.converDateToString(file.getModifiedDate(),DateUtil.defaultDatePattern));
                     }
                 }
             }
         } catch (Exception e) {
-            System.out.println("###[Error] FTPToolkit.getlistFiles()"+ e.getMessage());
+            System.out.println("###[Error] FTPToolkit.getlistFiles()" + e.getMessage());
         }
         return filesList;
     }
@@ -392,6 +402,7 @@ public class FtpUpLoadUtils {
     private void disconnect() {
         if (ftp != null) {
             try {
+                context.unregisterReceiver(connectionChangeReceiver);
                 ftp.disconnect(false);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -402,14 +413,8 @@ public class FtpUpLoadUtils {
     /*
     续传
      */
-    public void reUpload() {
-        new Thread() {
-            @Override
-            public void run() {
-                super.run();
-                initConnection(ip, port, userName, password);
-            }
-        }.start();
+    public void reUpload(Context context,FtpUploadInfoEntity ftpUploadInfoEntity) {
+        uploadFile(context,ftpUploadInfoEntity);
     }
 
 

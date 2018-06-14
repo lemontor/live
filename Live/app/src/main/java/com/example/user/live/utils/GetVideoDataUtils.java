@@ -123,6 +123,8 @@ public class GetVideoDataUtils {
                 info.setTitle(titleName);
                 info.setDuration(getTime(cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Video
                         .Media.DURATION))));
+                info.setLongDuration(getSecondTime(cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Video
+                        .Media.DURATION))));
                 if(listMap.containsKey(dateType)){
                     List<VideoEntity>  videoEntityList = listMap.get(dateType);
                     if(videoEntityList != null){
@@ -183,6 +185,11 @@ public class GetVideoDataUtils {
         }
     }
 
+
+    private static int  getSecondTime(long date){
+        int second = (int) (date / 1000);
+        return second;
+    }
 
     public static String getTime(long date) {
         int second = (int) (date / 1000);

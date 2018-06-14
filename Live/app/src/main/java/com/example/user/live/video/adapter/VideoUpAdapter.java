@@ -62,7 +62,7 @@ public class VideoUpAdapter extends BaseAdapter{
         GlideUtils.loadLocalPic(context, videoEntityList.get(position).getThumbPath(), holder.ivPic);
         holder.tvTitle.setText(videoEntityList.get(position).getTitle());
         holder.tvTotalProgress.setText("/" + videoEntityList.get(position).getSize());
-        holder.tvLoadingProgress.setText(String.valueOf(videoEntityList.get(position).getProgress()));
+//        holder.tvLoadingProgress.setText(videoEntityList.get(position).getSize());
         holder.pbLoading.setPercent(videoEntityList.get(position).getProgress());
         if (videoEntityList.get(position).getStatus() == 2) {//正在上传
             holder.tvLoadingStatus.setText("正在下载");

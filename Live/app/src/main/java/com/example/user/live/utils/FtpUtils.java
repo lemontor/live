@@ -1,146 +1,159 @@
-//package com.example.user.live.utils;
-//
-//
-//import android.content.Intent;
-//import android.util.Log;
-//
-//import com.example.user.live.video.entity.FromUploadEventBean;
-//import com.example.user.live.video.entity.FtpUploadInfoEntity;
-//
-//import org.greenrobot.eventbus.EventBus;
-//
-//import java.io.FileNotFoundException;
-//import java.io.IOException;
-//
-//import it.sauronsoftware.ftp4j.FTPClient;
-//import it.sauronsoftware.ftp4j.FTPDataTransferListener;
-//import it.sauronsoftware.ftp4j.FTPException;
-//import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
-//
-///**
-// * Created by user on 2018/6/4.
-// */
-//public class FtpUtils {
-//
-//    private int port;
-//    private String userName;
-//    private String passWord;
-//    private String servicePath;
-//    private String filePath;
-//    private String fileName;
-//    private long fileSize;
-//    private String host;
-//    private FTPClient ftpClient;
-//    private int uploadSize;
-//
-//    public void upLoad(FtpUploadInfoEntity infoEntity) {
-//        port = infoEntity.port;
-//        userName = infoEntity.userName;
-//        passWord = infoEntity.password;
-//        servicePath = infoEntity.serverPath;
-//        filePath = infoEntity.path;
-//        fileName = infoEntity.fileName;
-//        fileSize = infoEntity.len;
-//    }
-//
-//    private void initFtpClient(){
-//        ftpClient = new FTPClient();
-//        try {
-//            ftpClient.connect(host,port);
-//            ftpClient.login(userName,passWord);
-//            ftpClient.setType(FTPClient.TYPE_BINARY);//设置传输的类型
-//            ftpClient.setCharset("GBK");
-//            ftpClient.setPassive(true);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (FTPIllegalReplyException e) {
-//            e.printStackTrace();
-//        } catch (FTPException e) {
-//            e.printStackTrace();
-//        }
-//        ftpClient.setPassive(true);
-//    }
-//
-//
-//
-//    class UploadThread extends Thread {
-//
-//        @Override
-//        public void run() {
-//            try {
-//                ftpClient.upload(packageFile, new MyTransferListener());
-//            } catch (FileNotFoundException e) {
-//                Log.e(TAG, "UploadThread FileNotFoundException");
-//                e.printStackTrace();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                Thread.currentThread().interrupt();
+package com.example.user.live.utils;
+
+
+import android.util.Log;
+
+import com.example.user.live.video.entity.FromUploadBean;
+import com.example.user.live.video.entity.FromUploadEventBean;
+
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.ftp.FTPReply;
+import org.greenrobot.eventbus.EventBus;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.text.DecimalFormat;
+
+/**
+ * Created by user on 2018/6/4.
+ */
+public class FtpUtils {
+
+    private FTPClient ftpClient;
+    private boolean stop = false;
+    private long percent;
+    DecimalFormat df = new DecimalFormat("#.0");
+
+    public boolean upLoad(String localFilePath, String fileName, int poi) {
+        FromUploadBean fromUploadBean = new FromUploadBean();//等待中
+        fromUploadBean.setPoi(poi);
+        fromUploadBean.setType(1);
+        EventBus.getDefault().post(fromUploadBean);
+//        this.localFilePath = localFilePath;
+        ftpClient = new FTPClient();
+        try {
+            ftpClient.connect(ConstantUtils.HOST, 21);
+            ftpClient.login(ConstantUtils.USENAME, ConstantUtils.PASSWORD);
+            ftpClient.setControlEncoding("iso-8859-1");
+            if (!FTPReply.isPositiveCompletion(ftpClient.getReplyCode())) {
+                ftpClient.disconnect();
+                FromUploadBean connedBean = new FromUploadBean();//连接失败
+                fromUploadBean.setPoi(poi);
+                fromUploadBean.setType(3);
+                EventBus.getDefault().post(connedBean);
+                return false;
+            }
+            File localFile = new File(localFilePath);
+            if (!localFile.exists()) {
+                FromUploadBean connedBean = new FromUploadBean();//本地文件不存在
+                fromUploadBean.setPoi(poi);
+                fromUploadBean.setType(4);
+                EventBus.getDefault().post(connedBean);
+                return false;
+            }
+            long localSize = localFile.length();
+            ftpClient.changeWorkingDirectory(ConstantUtils.SERVERPATH);//切换目录
+//            String remotePath =  servicePath+fileName;
+//            FTPFile[] files = ftpClient.listFiles(remotePath);
+            FTPFile[] files = ftpClient.listFiles();
+            int index = 0;
+            String file = fileName + ".mp4";
+            for (index = 0; index < files.length; index++) {
+                Log.e("tag_file_name", files[index].getName());
+                if (files[index].getName().equals(file)) {
+                    break;
+                }
+            }
+            long serviceSize = 0;
+            if (index == files.length) {
+                serviceSize = 0;
+            } else {
+                serviceSize = files[index].getSize();// 服务器文件的长度
+            }
+            RandomAccessFile raf = new RandomAccessFile(localFile, "r");
+            // 进度
+            long step = localSize / 100;
+            long process = 0;
+            long currentSize = serviceSize;
+            // 好了，正式开始上传文件
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+            ftpClient.setRestartOffset(serviceSize);
+            raf.seek(serviceSize);
+            OutputStream output = ftpClient.appendFileStream(file);
+            byte[] b = new byte[1024];
+            int length = 0;
+            FromUploadBean startBean = new FromUploadBean();//开始上传
+            fromUploadBean.setPoi(poi);
+            fromUploadBean.setType(2);
+            EventBus.getDefault().post(startBean);
+            while (!stop && (length = raf.read(b)) != -1) {
+                output.write(b, 0, length);
+                currentSize = currentSize + length;
+                Log.e("tag_currentSize", currentSize + "");
+                percent = (long) (currentSize * 100 / (localSize * 1.0));
+                FromUploadBean uPingBean = new FromUploadBean();
+                uPingBean.setProgress((int) percent);
+                double mSize = (double) currentSize / (1024 * 1024);
+                uPingBean.setLen(df.format(mSize));
+                uPingBean.setType(6);
+                uPingBean.setPoi(poi);
+                EventBus.getDefault().post(uPingBean);
+                if (currentSize == localSize) {//上传完成
+                    FromUploadBean finishBean = new FromUploadBean();
+                    finishBean.setType(8);
+                    finishBean.setPoi(poi);
+                    EventBus.getDefault().post(finishBean);
+                }
+            }
+            if (stop) {
+                FromUploadBean finishBean = new FromUploadBean();
+                finishBean.setType(5);
+                finishBean.setPoi(poi);
+                EventBus.getDefault().post(finishBean);
+            }
+            stop = false;
+            output.flush();
+            output.close();
+            raf.close();
+//            if (ftpClient.completePendingCommand()) {
+//                Log.e("tag_上传进度：","文件上传成功");
+//                return true;
+//            } else {
+//                return false;
 //            }
-//
-//        }
-//    }
-//
-//
-//    public class MyTransferListener implements FTPDataTransferListener {
-//
-//        long percent = 0L;
-//
-//        //传输中止时触发
-//        public void aborted() {
-//            Log.e("MyFTPClient", "file aborted");
-//            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
-//            fromUploadEventBean.setEventType(2);
-//            fromUploadEventBean.setProgress(0);
-//            fromUploadEventBean.setType(5);
-//            EventBus.getDefault().post(fromUploadEventBean);
-//        }
-//
-//        //文件传输完成时，触发
-//        public void completed() {
-//            Log.e("MyFTPClient", "file completed");
-//            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
-//            fromUploadEventBean.setEventType(2);
-//            fromUploadEventBean.setProgress(0);
-//            fromUploadEventBean.setType(3);
-//            EventBus.getDefault().post(fromUploadEventBean);
-//
-//        }
-//
-//        //传输失败时触发
-//        public void failed() {
-//            Log.e("MyFTPClient", "file failed");
-//            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
-//            fromUploadEventBean.setEventType(2);
-//            fromUploadEventBean.setProgress(0);
-//            fromUploadEventBean.setType(4);
-//            EventBus.getDefault().post(fromUploadEventBean);
-//
-//        }
-//
-//        //文件开始上传或下载时触发
-//        public void started() {
-//            Log.e("MyFTPClient", "file start");
-//            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
-//            fromUploadEventBean.setEventType(2);
-//            fromUploadEventBean.setProgress(0);
-//            fromUploadEventBean.setType(1);
-//            EventBus.getDefault().post(fromUploadEventBean);
-//        }
-//
-//        //显示已经传输的字节数
-//        public void transferred(int arg0) {
-//            uploadSize += arg0;
-//            percent = (long) (uploadSize * 100 / (fileSize * 1.0));
-//            FromUploadEventBean fromUploadEventBean = new FromUploadEventBean();
-//            fromUploadEventBean.setEventType(2);
-//            fromUploadEventBean.setProgress((int) percent);
-//            double mSize = (double) uploadSize / (1024 * 1024);
-////            fromUploadEventBean.setLen(df.format(mSize));
-//            fromUploadEventBean.setType(2);
-//            EventBus.getDefault().post(fromUploadEventBean);
-//            Log.e("MyFTPClient", "percent:" + percent + "%  UploadSize:" + uploadSize + "byte");
-//        }
-//    }
-//
-//
-//}
+            if (!ftpClient.completePendingCommand()) {
+                FromUploadBean failBean = new FromUploadBean();
+                failBean.setType(7);
+                failBean.setPoi(poi);
+                EventBus.getDefault().post(failBean);
+                Log.e("tag_上传进度：", "文件上传失败");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            FromUploadBean failBean = new FromUploadBean();
+            failBean.setType(3);
+            failBean.setPoi(poi);
+            EventBus.getDefault().post(failBean);
+            Log.e("tag_", "ftp连接失败:" + e.getMessage());
+        } finally {
+            if (ftpClient != null) {
+                try {
+                    ftpClient.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return false;
+    }
+
+    public void stop() {
+        stop = true;
+    }
+
+}

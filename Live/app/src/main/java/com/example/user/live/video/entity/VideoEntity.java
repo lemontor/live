@@ -18,6 +18,25 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
     private boolean  isChose;
     private int   status;
     private int   progress;
+    private int  longDuration;
+    private boolean  isUp = false;
+
+
+    public boolean isUp() {
+        return isUp;
+    }
+
+    public void setUp(boolean up) {
+        isUp = up;
+    }
+
+    public int getLongDuration() {
+        return longDuration;
+    }
+
+    public void setLongDuration(int longDuration) {
+        this.longDuration = longDuration;
+    }
 
     public int getStatus() {
         return status;
@@ -125,6 +144,7 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
                 ", isChose=" + isChose +
                 '}';
     }
+
 
     @Override
     public int compare(VideoEntity videoEntity, VideoEntity t1) {

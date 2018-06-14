@@ -77,6 +77,11 @@ public class VideoGvAdapter extends BaseAdapter {
         }
         GlideUtils.loadLocalBitmap(context,entityList.get(i).getThumbPath(),viewHolderPic.ivPic,mGridWidth,mGridWidth);
         viewHolderPic.tvLen.setText(entityList.get(i).getDuration());
+        if(entityList.get(i).isUp()){
+            viewHolderPic.ivIsUp.setVisibility(View.VISIBLE);
+        }else{
+            viewHolderPic.ivIsUp.setVisibility(View.GONE);
+        }
         if(entityList.get(i).isChose()){
             viewHolderPic.ivChose.setImageResource(R.mipmap.group);
         }else{
@@ -112,11 +117,14 @@ public class VideoGvAdapter extends BaseAdapter {
         private ImageView  ivChose;
         private RelativeLayout layout;
         private TextView  tvLen;
+        private ImageView  ivIsUp;
+
         public ViewHolderPic(View view) {
             ivPic = (ImageView) view.findViewById(R.id.iv_pic);
             ivChose = (ImageView) view.findViewById(R.id.cb_chose);
             layout = (RelativeLayout) view.findViewById(R.id.layout_up);
             tvLen = (TextView) view.findViewById(R.id.tv_len);
+            ivIsUp = (ImageView) view.findViewById(R.id.iv_is_up);
             FrameLayout.LayoutParams  layoutParams = (FrameLayout.LayoutParams) layout.getLayoutParams();
             layoutParams.width = mGridWidth;
             layoutParams.height = mGridWidth;

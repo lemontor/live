@@ -1,4 +1,4 @@
-package com.example.user.live.video;
+package com.example.user.live.video.upload;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -11,40 +11,40 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.text.Layout;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+
 import com.example.user.live.R;
+import com.example.user.live.utils.CacheUtils;
 import com.example.user.live.video.adapter.VideoFailAdapter;
 import com.example.user.live.video.adapter.VideoFinishAdapter;
 import com.example.user.live.video.adapter.VideoUpAdapter;
 import com.example.user.live.video.entity.FromActivityEventBean;
 import com.example.user.live.video.entity.FromServiceEventBean;
-import com.example.user.live.video.entity.FromUploadEventBean;
+import com.example.user.live.video.entity.FromUploadBean;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.view.CustomProgressBar;
 import com.example.user.live.view.StaticListView;
+import com.google.gson.Gson;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by user on 2018/4/27.
  */
-public class VideoUpLoad extends Activity implements View.OnClickListener {
+public class VideoUpLoadActivity extends Activity implements View.OnClickListener {
 
     private StaticListView lvFinish, lvFail, lvLoading;
     //    private RecyclerView rvLoading;
@@ -59,7 +59,6 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
     private VideoUpAdapter videoUpAdapter;
     private int index = 0;
     private IntentFilter intentFilter;
-    //    private NetworkChangeReceiver networkChangeReceiver;
     private VideoFinishAdapter videoFinishAdapter;
     private VideoFailAdapter videoFailAdapter;
 
@@ -67,54 +66,79 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
     接收上传的信息
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void upLoadEvent(FromUploadEventBean fromUploadEventBean) {
-        if (fromUploadEventBean != null) {
-            if (fromUploadEventBean.getType() == 1) {//开始
-                videoEntityList.get(index).setStatus(2);
-            } else if (fromUploadEventBean.getType() == 2) {//上传中
-                videoEntityList.get(index).setStatus(2);
-                videoEntityList.get(index).setProgress(fromUploadEventBean.getProgress());
-                updateSingle(index, fromUploadEventBean.getProgress(), fromUploadEventBean.getLen());
-            } else if (fromUploadEventBean.getType() == 3) {//完成:将已完成的数据放到完成模块
-                if (lvFinish.getVisibility() == View.GONE) {
-                    lvFinish.setVisibility(View.VISIBLE);
+    public void upLoadEvent(FromUploadBean fromUploadBean) {
+        if (fromUploadBean != null) {
+            if (fromUploadBean.getType() == 1) {//等待中
+                if (videoEntityList != null) {
+                    videoEntityList.get(index).setStatus(7);
+                    videoUpAdapter.notifyDataSetChanged();
                 }
-                VideoEntity finishEntity = videoEntityList.remove(index);
-                videoFinishList.add(finishEntity);
-                videoFinishAdapter.notifyDataSetChanged();
-                tvFinishNotify.setText("已完成(" + videoFinishList.size() + ")");
-                tvFinishClear.setText("全部清空");
-                videoUpAdapter.notifyDataSetChanged();
-                if(videoEntityList.size() == 0){
-                   upViewLoading.setVisibility(View.GONE);
+            } else if (fromUploadBean.getType() == 2) {//开始
+                if (videoEntityList != null) {
+                    videoEntityList.get(index).setStatus(2);
+                    videoUpAdapter.notifyDataSetChanged();
                 }
-            } else if (fromUploadEventBean.getType() == 4) {//失败
-                if (lvFail.getVisibility() == View.GONE) {
-                    lvFail.setVisibility(View.VISIBLE);
+            } else if (fromUploadBean.getType() == 3) {//连接失败
+                upLoadFail();
+            } else if (fromUploadBean.getType() == 4) {//本地文件不存在
+                if (videoEntityList != null) {
+                    videoEntityList.remove(index);
+                    videoUpAdapter.notifyDataSetChanged();
                 }
-                VideoEntity finishEntity = videoEntityList.remove(index);
-                finishEntity.setStatus(6);
-                videoFailList.add(finishEntity);
-                tvFailNotify.setText("上传失败(" + videoFailList.size() + ")");
-                videoFailAdapter.notifyDataSetChanged();
-                videoUpAdapter.notifyDataSetChanged();
-                if(videoEntityList.size() == 0){
-                    upViewLoading.setVisibility(View.GONE);
+            } else if (fromUploadBean.getType() == 5) {//暂停
+                if (videoEntityList != null) {
+                    videoEntityList.get(index).setStatus(6);
+                    videoUpAdapter.notifyDataSetChanged();
                 }
-            } else if (fromUploadEventBean.getType() == 5) {//终止
-                Log.e("tag_","终止");
-            } else if (fromUploadEventBean.getType() == 6) {//暂停
-                Log.e("tag_","暂停");
-            } else if (fromUploadEventBean.getType() == 7) {//等待中
-                Log.e("tag_","等待中");
-            } else if(fromUploadEventBean.getType() == 10){//网络不可用
-               initDialog();
-            }else if(fromUploadEventBean.getType() == 11){//非wifi环境
-               initDialog();
-            }else if(fromUploadEventBean.getType() == 12){//wifi环境
-
+            } else if (fromUploadBean.getType() == 6) {//上传中
+                updateSingle(index, fromUploadBean.getProgress(), fromUploadBean.getLen());
+            } else if (fromUploadBean.getType() == 7) {//上传失败
+                upLoadFail();
+            } else if (fromUploadBean.getType() == 8) {//上传完成
+                upLoadFinish();
             }
         }
+    }
+
+    /*
+    上传完成
+     */
+    private void upLoadFinish() {
+        if (videoEntityList != null) {
+            if (lvFinish.getVisibility() == View.GONE) {
+                lvFinish.setVisibility(View.VISIBLE);
+            }
+            VideoEntity finishEntity = videoEntityList.remove(index);
+            videoFinishList.add(finishEntity);
+            videoFinishAdapter.notifyDataSetChanged();
+            tvFinishNotify.setText("已完成(" + videoFinishList.size() + ")");
+            tvFinishClear.setText("全部清空");
+            videoUpAdapter.notifyDataSetChanged();
+            if (videoEntityList.size() == 0) {
+                upViewLoading.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    /*
+    上传失败
+     */
+    private void upLoadFail() {
+        if (videoEntityList != null) {
+            if (lvFail.getVisibility() == View.GONE) {
+                lvFail.setVisibility(View.VISIBLE);
+            }
+            VideoEntity finishEntity = videoEntityList.remove(index);
+            finishEntity.setStatus(6);
+            videoFailList.add(finishEntity);
+            tvFailNotify.setText("上传失败(" + videoFailList.size() + ")");
+            videoFailAdapter.notifyDataSetChanged();
+            videoUpAdapter.notifyDataSetChanged();
+            if (videoEntityList.size() == 0) {
+                upViewLoading.setVisibility(View.GONE);
+            }
+        }
+
     }
 
     /*
@@ -153,12 +177,12 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
         videoFailList = new ArrayList<>();
         videoTotalEntity = (VideoTotalEntity) getIntent().getSerializableExtra("video");
         if (videoTotalEntity != null) {
+//            new CacheUtils().init().putCacheForVideoInfo(videoTotalEntity);
             videoEntityList.addAll(videoTotalEntity.getVideoEntities());
             EventBus.getDefault().postSticky(videoTotalEntity);
-            Intent intent = new Intent(this, UpVideoFileService.class);
+            Intent intent = new Intent(this, UpLoadVideoFileService.class);
             startService(intent);
-            tvLoadNotify.setText("进行中（"+videoEntityList.size()+")");
-
+            tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
         }
     }
 
@@ -185,29 +209,30 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
         tvSet.setText("");
         Drawable drawable = getResources().getDrawable(R.mipmap.spsc_gengduo);
         tvSet.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-
-
     }
+
+    NetworkChangeReceiver networkChangeReceiver;
 
     private void initListener() {
         //注册网络变化监听事件
         intentFilter = new IntentFilter();
         intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        networkChangeReceiver = new NetworkChangeReceiver();
+        registerReceiver(networkChangeReceiver, intentFilter);
         videoUpAdapter = new VideoUpAdapter(this, videoEntityList, new VideoUpAdapter.OnStartClickListener() {
             @Override
             public void onStart(int type, int position, int status) {
+                Log.e("tag_", "onStart");
                 partVideoStop(position, index);
-//                FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
-//                fromActivityEventBean.setEvent(1);
-//                fromActivityEventBean.setPoi(position);
-//                EventBus.getDefault().post(fromActivityEventBean);
-                EventBus.getDefault().postSticky(videoTotalEntity);
-                Intent intent = new Intent(VideoUpLoad.this, UpVideoFileService.class);
-                startService(intent);
+                FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
+                fromActivityEventBean.setEvent(1);
+                fromActivityEventBean.setPoi(position);
+                EventBus.getDefault().post(fromActivityEventBean);
             }
 
             @Override
             public void onStop(int type, int position, int status) {
+                Log.e("tag_", "onStop");
                 try {
                     FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
                     int nextPoi = position + 1;
@@ -222,7 +247,7 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
                         targetPoi = nextPoi;
                     }
                     videoEntityList.get(position).setStatus(6);
-                    videoUpAdapter.notifyDataSetChanged();
+//                    videoUpAdapter.notifyDataSetChanged();
                     fromActivityEventBean.setEvent(2);
                     fromActivityEventBean.setPoi(targetPoi);
                     EventBus.getDefault().post(fromActivityEventBean);
@@ -242,8 +267,8 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
         tvFinishClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                 videoFinishList.clear();
-                 lvFinish.setVisibility(View.GONE);
+                videoFinishList.clear();
+                lvFinish.setVisibility(View.GONE);
             }
         });
         tvFailClear.setOnClickListener(new View.OnClickListener() {
@@ -260,19 +285,19 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
             @Override
             public void onReset(int poi) {
                 VideoEntity videoEntity = videoFailList.remove(poi);
-                if(videoEntityList.size() == 0){
+                if (videoEntityList.size() == 0) {
                     videoEntityList.add(videoEntity);
-                }else{
+                } else {
                     videoEntityList.add(videoEntityList.size() - 1, videoEntity);
                 }
-                if(videoFailList.size() == 0){
+                if (videoFailList.size() == 0) {
                     lvFail.setVisibility(View.GONE);
-                }else{
+                } else {
                     videoFailAdapter.notifyDataSetChanged();
                 }
                 videoUpAdapter.notifyDataSetChanged();
                 upViewLoading.setVisibility(View.VISIBLE);
-                tvLoadNotify.setText("进行中（"+videoEntityList.size()+")");
+                tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
 
             }
         });
@@ -338,11 +363,11 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
                 mPopNotify.dismiss();
                 break;
             case R.id.tv_reset:
-                if(videoEntityList.size() == 0){
-                   videoEntityList.addAll(videoFailList);
-                   videoUpAdapter.notifyDataSetChanged();
-                }else{
-                    videoEntityList.addAll(videoEntityList.size() - 1,videoFailList);
+                if (videoEntityList.size() == 0) {
+                    videoEntityList.addAll(videoFailList);
+                    videoUpAdapter.notifyDataSetChanged();
+                } else {
+                    videoEntityList.addAll(videoEntityList.size() - 1, videoFailList);
                     videoUpAdapter.notifyDataSetChanged();
                     lvFail.setVisibility(View.GONE);
                 }
@@ -366,44 +391,41 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
     /*
     监听网络变化
      */
-//    class NetworkChangeReceiver extends BroadcastReceiver {
-//        @Override
-//        public void onReceive(Context context, Intent intent) {
-//            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-//            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-//            if (networkInfo != null && networkInfo.isAvailable()) {
-//                switch (networkInfo.getType()) {
-//                    case ConnectivityManager.TYPE_MOBILE:
-//                        initDialog();
+    class NetworkChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+            if (networkInfo != null && networkInfo.isAvailable()) {
+                switch (networkInfo.getType()) {
+                    case ConnectivityManager.TYPE_MOBILE:
+                        initDialog();
 //                        videoEntityList.get(index).setStatus(9);
+//                        videoUpAdapter.notifyDataSetChanged();
 ////                        videoUpAdapter.notifyItemChanged(index);
-//                        FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
-//                        fromActivityEventBean.setPoi(index);
-//                        fromActivityEventBean.setEvent(2);
-//                        EventBus.getDefault().post(fromActivityEventBean);
-//                        break;
-//                    case ConnectivityManager.TYPE_WIFI:
-//                        videoEntityList.get(index).setStatus(2);
-////                        videoUpAdapter.notifyItemChanged(index);
-//                        FromActivityEventBean fromActivityEventBean1 = new FromActivityEventBean();
-//                        fromActivityEventBean1.setPoi(index);
-//                        fromActivityEventBean1.setEvent(1);
-//                        EventBus.getDefault().post(fromActivityEventBean1);
-//                        break;
-//                    default:
-//                        break;
-//                }
-//            } else {
-//                initDialog();
+                        FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
+                        fromActivityEventBean.setPoi(index);
+                        fromActivityEventBean.setEvent(2);
+                        EventBus.getDefault().post(fromActivityEventBean);
+                        break;
+                    case ConnectivityManager.TYPE_WIFI:
+                        videoEntityList.get(index).setStatus(2);
+
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                initDialog();
 //                videoEntityList.get(index).setStatus(8);
 ////                videoUpAdapter.notifyItemChanged(index);
-//                FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
-//                fromActivityEventBean.setPoi(index);
-//                fromActivityEventBean.setEvent(2);
-//                EventBus.getDefault().post(fromActivityEventBean);
-//            }
-//        }
-//    }
+                FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
+                fromActivityEventBean.setPoi(index);
+                fromActivityEventBean.setEvent(2);
+                EventBus.getDefault().post(fromActivityEventBean);
+            }
+        }
+    }
 
     /**
      * 第一种方法 更新对应view的内容
@@ -422,6 +444,10 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
             CustomProgressBar pbar = (CustomProgressBar) view.findViewById(R.id.pb_progress);
             TextView tvPercent = (TextView) view.findViewById(R.id.tv_load);
             tvPercent.setText(loadProgress);
+            ImageView ivStatus = (ImageView) view.findViewById(R.id._iv_start);
+            ivStatus.setImageResource(R.mipmap.spsc_zhengzaishangchuan);
+            TextView tvStatus = (TextView) view.findViewById(R.id.tv_status);
+            tvStatus.setText("正在上传");
             pbar.setPercent(progress);
         }
     }
@@ -437,11 +463,24 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
         videoUpAdapter.notifyDataSetChanged();
     }
 
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        unregisterReceiver(networkChangeReceiver);
+        unregisterReceiver(networkChangeReceiver);
         EventBus.getDefault().unregister(this);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
