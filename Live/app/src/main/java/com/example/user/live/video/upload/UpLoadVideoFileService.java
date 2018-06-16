@@ -32,6 +32,7 @@ import com.example.user.live.video.entity.VideoUpInfoBean;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.List;
 
 /**
@@ -50,7 +51,7 @@ public class UpLoadVideoFileService extends Service {
     private long size;
     private String fileName;
     private String duration;
-    private int   intDuration;
+    private int intDuration;
     private String thumb;
     private FtpUploadInfoEntity entity;
     private FtpUtils ftpUtils;
@@ -65,21 +66,19 @@ public class UpLoadVideoFileService extends Service {
                 notification.contentView.setProgressBar(R.id.pro, 100, 0, false);//重新初始化notification的显示
                 notification.contentView.setTextViewText(R.id.tv_start, "暂停");
                 index = activityEventBean.getPoi();//记录当前正在上传的视频下标
-//                ftpUpLoadUtils.reUpload(UpLoadVideoFileService.this, entity);
-                new Thread() {
-                    @Override
-                    public void run() {
-                        super.run();
-                        ftpUtils.upLoad(upLoadFileName, fileName, 0);
-                    }
-                }.start();
-            } else if (activityEventBean.getEvent() == 2) {//暂停
-                ftpUtils.stop();
-//                stopForeground(true);
-//                stopSelf();
+                upLoadFileName = videoEntityList.get(index).getPath();
+                size = videoEntityList.get(index).getLen();
+                fileName = videoEntityList.get(index).getTitle();
+                duration = videoEntityList.get(index).getDuration();
+                intDuration = videoEntityList.get(index).getLongDuration();
+                thumb = videoEntityList.get(index).getThumbPath();
+                Log.e("tag_fileName", fileName + "");
+                upVideo();
             }
-            notificationManager.notify(1, notification);
+        } else if (activityEventBean.getEvent() == 2) {//暂停
+            ftpUtils.stop();
         }
+        notificationManager.notify(1, notification);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -98,6 +97,7 @@ public class UpLoadVideoFileService extends Service {
             } else if (fromUploadEventBean.getType() == 5) {//暂停
             } else if (fromUploadEventBean.getType() == 6) {//上传中
             } else if (fromUploadEventBean.getType() == 7) {//上传失败
+                upLoadNextVideo();
             } else if (fromUploadEventBean.getType() == 8) {//上传完成
                 new Thread() {
                     @Override
@@ -156,15 +156,10 @@ public class UpLoadVideoFileService extends Service {
         infoEntity.fileName = fileName;
         clickStatus = 1;//初始化状态为暂停
         this.entity = infoEntity;
-        new Thread() {
-            @Override
-            public void run() {
-                super.run();
-                ftpUtils.upLoad(upLoadFileName, fileName, 0);
-            }
-        }.start();
+        upVideo();
         return super.onStartCommand(intent, flags, startId);
     }
+
 
     @Nullable
     @Override
@@ -235,22 +230,55 @@ public class UpLoadVideoFileService extends Service {
 
 
     private void upInfo() {
-        volleyUtils.upVideoInfo(fileName, ConstantUtils.SERVERPATH + fileName + ".mp4", sharedPreferencesUtils.getString(ConstantUtils.USER_ID), size, String.valueOf(intDuration),thumb, new VolleyUtils.OnVolleyListener() {
+        volleyUtils.upVideoInfo(fileName, ConstantUtils.SERVERPATH + fileName + ".mp4", sharedPreferencesUtils.getString(ConstantUtils.USER_ID), size, String.valueOf(intDuration), thumb, new VolleyUtils.OnVolleyListener() {
             @Override
             public void onResponse(String response) {
-                Log.e("tag_onResponse",response);
-                VideoUpInfoBean.VideoBean  videoBean = new VideoUpInfoBean.VideoBean();
+                Log.e("tag_onResponse", response);
+                VideoUpInfoBean.VideoBean videoBean = new VideoUpInfoBean.VideoBean();
                 videoBean.setFile_name(fileName);
-                videoBean.setPath(ConstantUtils.SERVERPATH + fileName + ".mp4");
-                videoBean.setUser_id(sharedPreferencesUtils.getString(ConstantUtils.USER_ID));
                 EventBus.getDefault().post(videoBean);
+                upLoadNextVideo();
             }
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e("tag_onErrorResponse",error.getMessage());
+                Log.e("tag_onErrorResponse", error.getMessage());
             }
         });
+    }
+
+    /*
+    上传下一个视频
+     */
+    private void upLoadNextVideo() {
+        if (videoEntityList != null) {
+            if (index != videoEntityList.size() - 1) {
+                videoEntityList.remove(index);
+                upLoadFileName = videoEntityList.get(index).getPath();
+                size = videoEntityList.get(index).getLen();
+                fileName = videoEntityList.get(index).getTitle();
+                duration = videoEntityList.get(index).getDuration();
+                intDuration = videoEntityList.get(index).getLongDuration();
+                thumb = videoEntityList.get(index).getThumbPath();
+                Log.e("tag_fileName", fileName + "");
+                FromServiceEventBean fromServiceEventBean = new FromServiceEventBean();
+                fromServiceEventBean.setEvent(3);
+                fromServiceEventBean.setPoi(index);
+                EventBus.getDefault().post(fromServiceEventBean);
+                upVideo();
+            }
+        }
+    }
+
+
+    private void upVideo() {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                ftpUtils.upLoad(upLoadFileName, fileName, index);
+            }
+        }.start();
     }
 
 

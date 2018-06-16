@@ -57,7 +57,7 @@ public class VideoUpedAdapter extends BaseAdapter{
         }else{
             viewHolderPic = (ViewHolderPic) view.getTag();
         }
-//        GlideUtils.loadLocalPic(context,entityList.get(i).getThumbPath(),viewHolderPic.ivPic);
+        GlideUtils.loadLocalPic(context,entityList.get(i).getPic_url(),viewHolderPic.ivPic);
         viewHolderPic.tvTitle.setText(entityList.get(i).getFile_name());
         viewHolderPic.tvSize.setText(entityList.get(i).getShow_size());
         viewHolderPic.tvLen.setText(getTime(entityList.get(i).getVideo_time()));

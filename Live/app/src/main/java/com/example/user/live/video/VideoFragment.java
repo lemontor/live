@@ -50,8 +50,7 @@ public class VideoFragment extends Fragment {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void updateVideo(VideoUpInfoBean.VideoBean  videoBean) {
         if(videoBean != null){
-            videoBeanList.add(videoBean);
-            upedAdapter.notifyDataSetChanged();
+            loadData(sharedPreferencesUtils.getString(ConstantUtils.USER_ID));
         }
     }
 
@@ -120,6 +119,7 @@ public class VideoFragment extends Fragment {
                 if (response != null && !response.equals("")) {
                     VideoUpInfoBean videoUpInfoBean = new Gson().fromJson(response, VideoUpInfoBean.class);
                     if (videoUpInfoBean != null) {
+                        videoBeanList.clear();
                         videoBeanList.addAll(videoUpInfoBean.getData());
                         upedAdapter.notifyDataSetChanged();
                     }
@@ -128,7 +128,7 @@ public class VideoFragment extends Fragment {
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e("tag_onErrorResponse", error.getMessage());
+//                Log.e("tag_onErrorResponse", error.getMessage());
             }
         });
     }

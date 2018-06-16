@@ -47,6 +47,7 @@ public class VideoUpInfoBean {
         private  String  from_mark;
         private  String  video_cloud_id;
         private  String  show_size;
+        private  String  pic_url;
 
         public VideoBean() {
         }
@@ -121,6 +122,14 @@ public class VideoUpInfoBean {
 
         public void setShow_size(String show_size) {
             this.show_size = show_size;
+        }
+
+        public String getPic_url() {
+            return pic_url;
+        }
+
+        public void setPic_url(String pic_url) {
+            this.pic_url = pic_url;
         }
     }
 

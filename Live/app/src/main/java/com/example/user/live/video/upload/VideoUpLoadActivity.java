@@ -74,7 +74,9 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
                     videoUpAdapter.notifyDataSetChanged();
                 }
             } else if (fromUploadBean.getType() == 2) {//开始
+                Log.e("tag_event_first", "开始下载了");
                 if (videoEntityList != null) {
+                    Log.e("tag_event", "开始下载了");
                     videoEntityList.get(index).setStatus(2);
                     videoUpAdapter.notifyDataSetChanged();
                 }
@@ -222,34 +224,25 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         videoUpAdapter = new VideoUpAdapter(this, videoEntityList, new VideoUpAdapter.OnStartClickListener() {
             @Override
             public void onStart(int type, int position, int status) {
-                Log.e("tag_", "onStart");
-                partVideoStop(position, index);
-                FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
-                fromActivityEventBean.setEvent(1);
-                fromActivityEventBean.setPoi(position);
-                EventBus.getDefault().post(fromActivityEventBean);
+                try {
+                    partVideoStop(position, index);
+                    FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
+                    fromActivityEventBean.setEvent(1);
+                    fromActivityEventBean.setPoi(position);
+                    EventBus.getDefault().post(fromActivityEventBean);
+                } catch (Exception e) {
+
+                }
+
             }
 
             @Override
             public void onStop(int type, int position, int status) {
-                Log.e("tag_", "onStop");
                 try {
                     FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
-                    int nextPoi = position + 1;
-                    int targetPoi = 0;
-                    if (videoEntityList.size() == nextPoi) {
-                        index = 0;
-                        videoEntityList.get(0).setStatus(2);
-                        targetPoi = 0;
-                    } else {
-                        index = nextPoi;
-                        videoEntityList.get(nextPoi).setStatus(2);
-                        targetPoi = nextPoi;
-                    }
                     videoEntityList.get(position).setStatus(6);
-//                    videoUpAdapter.notifyDataSetChanged();
                     fromActivityEventBean.setEvent(2);
-                    fromActivityEventBean.setPoi(targetPoi);
+                    fromActivityEventBean.setPoi(position);
                     EventBus.getDefault().post(fromActivityEventBean);
                 } catch (Exception e) {
                 }
@@ -284,25 +277,28 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         videoFailAdapter.setOnChoseListener(new VideoFailAdapter.OnResetListener() {
             @Override
             public void onReset(int poi) {
-                VideoEntity videoEntity = videoFailList.remove(poi);
-                if (videoEntityList.size() == 0) {
-                    videoEntityList.add(videoEntity);
-                } else {
-                    videoEntityList.add(videoEntityList.size() - 1, videoEntity);
-                }
-                if (videoFailList.size() == 0) {
-                    lvFail.setVisibility(View.GONE);
-                } else {
-                    videoFailAdapter.notifyDataSetChanged();
-                }
-                videoUpAdapter.notifyDataSetChanged();
-                upViewLoading.setVisibility(View.VISIBLE);
-                tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
-
+                reUploadData(poi);
+//                VideoEntity videoEntity = videoFailList.remove(poi);
+//                if (videoEntityList.size() == 0) {
+//                    videoEntityList.add(videoEntity);
+//                } else {
+//                    videoEntityList.add(videoEntityList.size() - 1, videoEntity);
+//                }
+//                if (videoFailList.size() == 0) {
+//                    lvFail.setVisibility(View.GONE);
+//                } else {
+//                    videoFailAdapter.notifyDataSetChanged();
+//                }
+//                videoUpAdapter.notifyDataSetChanged();
+//                upViewLoading.setVisibility(View.VISIBLE);
+//                tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
+                FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
+                fromActivityEventBean.setEvent(1);
+                fromActivityEventBean.setPoi(index);
+                EventBus.getDefault().post(fromActivityEventBean);
             }
         });
         lvFail.setAdapter(videoFailAdapter);
-
     }
 
     AlertDialog alertDialog;
@@ -388,6 +384,8 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         }
     }
 
+    boolean  isCloseWifi = false;
+
     /*
     监听网络变化
      */
@@ -399,26 +397,33 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
             if (networkInfo != null && networkInfo.isAvailable()) {
                 switch (networkInfo.getType()) {
                     case ConnectivityManager.TYPE_MOBILE:
+                        Log.e("tag_info","手机网络");
                         initDialog();
-//                        videoEntityList.get(index).setStatus(9);
-//                        videoUpAdapter.notifyDataSetChanged();
-////                        videoUpAdapter.notifyItemChanged(index);
+                        videoEntityList.get(index).setStatus(9);
+                        videoUpAdapter.notifyDataSetChanged();
                         FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
                         fromActivityEventBean.setPoi(index);
                         fromActivityEventBean.setEvent(2);
                         EventBus.getDefault().post(fromActivityEventBean);
                         break;
                     case ConnectivityManager.TYPE_WIFI:
-                        videoEntityList.get(index).setStatus(2);
-
+                        if(isCloseWifi){
+                            reUploadData(index);
+                            FromActivityEventBean reStartActivityEventBean = new FromActivityEventBean();
+                            reStartActivityEventBean.setEvent(1);
+                            reStartActivityEventBean.setPoi(index);
+                            EventBus.getDefault().post(reStartActivityEventBean);
+//                            videoEntityList.get(index).setStatus(2);
+                            isCloseWifi = false;
+                        }
                         break;
                     default:
                         break;
                 }
             } else {
+                isCloseWifi = true;
+                Log.e("tag_info","网络不可用");
                 initDialog();
-//                videoEntityList.get(index).setStatus(8);
-////                videoUpAdapter.notifyItemChanged(index);
                 FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
                 fromActivityEventBean.setPoi(index);
                 fromActivityEventBean.setEvent(2);
@@ -447,6 +452,7 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
             ImageView ivStatus = (ImageView) view.findViewById(R.id._iv_start);
             ivStatus.setImageResource(R.mipmap.spsc_zhengzaishangchuan);
             TextView tvStatus = (TextView) view.findViewById(R.id.tv_status);
+            videoEntityList.get(index).setStatus(2);
             tvStatus.setText("正在上传");
             pbar.setPercent(progress);
         }
@@ -463,24 +469,31 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         videoUpAdapter.notifyDataSetChanged();
     }
 
+    private void  reUploadData(int poi){
+        VideoEntity videoEntity = videoFailList.remove(poi);
+        if (videoEntityList.size() == 0) {
+            videoEntityList.add(videoEntity);
+        } else {
+            videoEntityList.add(videoEntityList.size() - 1, videoEntity);
+        }
+        if (videoFailList.size() == 0) {
+            lvFail.setVisibility(View.GONE);
+        } else {
+            videoFailAdapter.notifyDataSetChanged();
+        }
+        videoUpAdapter.notifyDataSetChanged();
+        upViewLoading.setVisibility(View.VISIBLE);
+        tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
+    }
+
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(networkChangeReceiver);
         EventBus.getDefault().unregister(this);
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

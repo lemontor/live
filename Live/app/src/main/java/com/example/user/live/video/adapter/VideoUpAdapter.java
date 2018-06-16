@@ -2,6 +2,7 @@ package com.example.user.live.video.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -83,6 +84,7 @@ public class VideoUpAdapter extends BaseAdapter{
         holder.ivStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.e("tag_onclick",videoEntityList.get(position).getStatus()+"");
                 if (videoEntityList.get(position).getStatus() == 2) {
                     onStartClickListener.onStop(2, position, 6);//变为暂停
                 } else if (videoEntityList.get(position).getStatus() == 6) {

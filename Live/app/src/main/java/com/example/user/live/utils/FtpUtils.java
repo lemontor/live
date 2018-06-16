@@ -73,6 +73,14 @@ public class FtpUtils {
                 serviceSize = 0;
             } else {
                 serviceSize = files[index].getSize();// 服务器文件的长度
+                if(localSize == serviceSize ){
+                    Log.e("tag_event","已经上传过了");
+                    FromUploadBean finishBean = new FromUploadBean();
+                    finishBean.setType(8);
+                    finishBean.setPoi(poi);
+                    EventBus.getDefault().post(finishBean);
+                    return true;
+                }
             }
             RandomAccessFile raf = new RandomAccessFile(localFile, "r");
             // 进度
