@@ -59,7 +59,13 @@ public class VideoFailAdapter extends BaseAdapter{
         viewHolderPic.tvTitle.setText(entityList.get(i).getTitle());
         viewHolderPic.tvSize.setText(entityList.get(i).getSize());
         viewHolderPic.tvLen.setText(entityList.get(i).getDuration());
-        viewHolderPic.tvDate.setText(entityList.get(i).getTimeStatus());
+        if(entityList.get(i).getTimeStatus().equals("0")){
+            viewHolderPic.tvDate.setText("今天");
+        }else if(entityList.get(i).getTimeStatus().equals("-1")){
+            viewHolderPic.tvDate.setText("昨天");
+        }else{
+            viewHolderPic.tvDate.setText(entityList.get(i).getTimeStatus());
+        }
         viewHolderPic.ivReset.setVisibility(View.VISIBLE);
         viewHolderPic.ivReset.setOnClickListener(new View.OnClickListener() {
             @Override

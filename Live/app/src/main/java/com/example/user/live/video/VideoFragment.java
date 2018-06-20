@@ -15,8 +15,10 @@ import android.widget.RelativeLayout;
 
 import com.android.volley.VolleyError;
 import com.example.user.live.R;
+import com.example.user.live.app.App;
 import com.example.user.live.utils.ConstantUtils;
 import com.example.user.live.utils.SharedPreferencesUtils;
+import com.example.user.live.utils.ToastUtils;
 import com.example.user.live.utils.VolleyUtils;
 import com.example.user.live.video.adapter.VideoUpedAdapter;
 import com.example.user.live.video.entity.VideoUpInfoBean;
@@ -46,11 +48,15 @@ public class VideoFragment extends Fragment {
     private VideoUpInfoBean videoUpInfoBean;
     private ImageView ivUp;
 
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void updateVideo(VideoUpInfoBean.VideoBean  videoBean) {
         if(videoBean != null){
             loadData(sharedPreferencesUtils.getString(ConstantUtils.USER_ID));
+            if(App.upCount > 0){
+                ivUp.setVisibility(View.VISIBLE);
+            }else{
+                ivUp.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -75,8 +81,14 @@ public class VideoFragment extends Fragment {
         layoutList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), VideoUpLoadActivity.class);
-                startActivity(intent);
+                if(App.upCount == 0){
+                    ToastUtils.showToast(getActivity(),"暂无视频上传...");
+                }else{
+                    Intent intent = new Intent(getActivity(), VideoUpLoadActivity.class);
+                    intent.putExtra("has",2);
+                    startActivity(intent);
+                }
+
             }
         });
 

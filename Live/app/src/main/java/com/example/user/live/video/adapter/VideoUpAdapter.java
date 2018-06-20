@@ -108,7 +108,6 @@ public class VideoUpAdapter extends BaseAdapter{
             tvLoadingProgress = (TextView) itemView.findViewById(R.id.tv_load);
             tvTotalProgress = (TextView) itemView.findViewById(R.id.tv_total);
             tvLoadingStatus = (TextView) itemView.findViewById(R.id.tv_status);
-
             pbLoading = (CustomProgressBar) itemView.findViewById(R.id.pb_progress);
         }
     }

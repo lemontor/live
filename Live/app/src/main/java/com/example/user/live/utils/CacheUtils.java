@@ -35,7 +35,7 @@ public class CacheUtils {
         return this;
     }
 
-    public CacheUtils putCacheForVideoInfo(final List<VideoTotalEntity> data, final String fileName){
+    public CacheUtils putCacheForVideoInfo(final VideoTotalEntity data, final String fileName){
         new Thread() {
             @Override
             public void run() {

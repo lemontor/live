@@ -1,13 +1,20 @@
 package com.example.user.live;
 
+import android.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,7 +44,10 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import cn.jpush.android.api.JPushInterface;
 import cn.jpush.android.api.TagAliasCallback;
@@ -46,15 +56,20 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout  mLayoutContent;
     private WebView  mWebView;
-    String targetUrl = "http://210.12.56.75:8777/mobile/index.html";
+//    String targetUrl = "http://210.12.56.75:8777/mobile/index.html";
+    String targetUrl = "http://210.12.56.75:8266/mobile/index.html";
 //    String targetUrl = "http://study.huatec.com/mobile/index.html";
     private SharedPreferencesUtils sharedPreferencesUtils;
+    private String[] permissions = {android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    private List<String> mPermissionList;
+    private static int FIND_PERMISSIONS = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initUI();
+        mPermissionList = new ArrayList<>();
         WebSettings  webSetting = mWebView.getSettings();
         webSetting.setJavaScriptEnabled(true);//支持与javascript交互
         webSetting.setJavaScriptCanOpenWindowsAutomatically(true);//支持通过js打开新窗口
@@ -65,6 +80,17 @@ public class MainActivity extends AppCompatActivity {
         webSetting.setDefaultTextEncodingName("utf-8");
         initListener();
         EventBus.getDefault().register(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            for(String str : permissions){
+                if(ContextCompat.checkSelfPermission(this,str) != PackageManager.PERMISSION_GRANTED){
+                    mPermissionList.add(str);
+                }
+            }
+            if(!mPermissionList.isEmpty()){
+                String[] permissions = mPermissionList.toArray(new String[mPermissionList.size()]);
+                ActivityCompat.requestPermissions(this, permissions, FIND_PERMISSIONS);
+            }
+        }
     }
 
     @Override
@@ -79,8 +105,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initListener() {
-//        WebAppInterface webAppInterface = new WebAppInterface(this);
-//        mWebView.addJavascriptInterface(webAppInterface,"Android");
+
 
         AppInterface appInterface = new AppInterface(this);
         mWebView.addJavascriptInterface(appInterface,"Android");
@@ -170,38 +195,66 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
-
-
-    public class WebAppInterface{
-
-        public Context  context;
-
-        public  WebAppInterface(Context c){
-            this.context = c;
-        }
-
-        //String pushUrl,String liveId,String teacherName,String img
-        @android.webkit.JavascriptInterface
-        public void openLive(String pushUrl,String liveId,String teacherName,String img,String teacherId){
-              Log.e("tag_","open_live");
-            Log.e("tag_openLive",pushUrl+"_"+liveId+"_"+teacherName+"_"+img+"_"+teacherId);
-            Intent  intent = new Intent(MainActivity.this, LiveCameraActivity.class);
-            Bundle  bundle = new Bundle();
-            bundle.putString("pushUrl",pushUrl);
-            bundle.putString("liveId",liveId);
-            bundle.putString("teacherName",teacherName);
-            bundle.putString("img",img);
-            bundle.putString("teacherId",teacherId);
-            intent.putExtras(bundle);
-            startActivity(intent);
-        }
-    }
+//
+//
+//    public class WebAppInterface{
+//
+//        public Context  context;
+//
+//        public  WebAppInterface(Context c){
+//            this.context = c;
+//        }
+//        //String pushUrl,String liveId,String teacherName,String img
+//        @android.webkit.JavascriptInterface
+//        public void openLive(String pushUrl,String liveId,String teacherName,String img,String teacherId){
+//              Log.e("tag_","open_live");
+//            Log.e("tag_openLive",pushUrl+"_"+liveId+"_"+teacherName+"_"+img+"_"+teacherId);
+//            Intent  intent = new Intent(MainActivity.this, LiveCameraActivity.class);
+//            Bundle  bundle = new Bundle();
+//            bundle.putString("pushUrl",pushUrl);
+//            bundle.putString("liveId",liveId);
+//            bundle.putString("teacherName",teacherName);
+//            bundle.putString("img",img);
+//            bundle.putString("teacherId",teacherId);
+//            intent.putExtras(bundle);
+//            startActivity(intent);
+//        }
+//    }
 
     public  void  goBack(){
         if(mWebView != null && mWebView.canGoBack()){
            mWebView.goBack();
         }
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == FIND_PERMISSIONS) {
+            for (int i = 0; i < grantResults.length; i++) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    //判断是否勾选禁止后不再询问
+                    boolean showRequestPermission = ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, permissions[i]);
+                    if (showRequestPermission) {
+                        showDialog();
+                    }
+                }
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void showDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        // 设置参数
+        builder.setTitle("注意")
+                .setMessage("不允许需要的权限，部分功能将会无法实现！")
+                .setPositiveButton("关闭", new DialogInterface.OnClickListener() {// 积极
+                    @Override
+                    public void onClick(DialogInterface dialog,
+                                        int which) {
+                    }
+                });
+        builder.create().show();
+    }
+
 }

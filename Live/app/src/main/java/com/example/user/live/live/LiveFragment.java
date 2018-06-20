@@ -29,7 +29,7 @@ public class LiveFragment extends Fragment {
 
     private LinearLayout layoutWebView;
     private View contentView;
-    private String url = "http://210.12.56.75:8777/mobile/liebiao.html";
+    private String url = "http://210.12.56.75:8266/mobile/liebiao.html";
     private String useId;
 
 
@@ -44,6 +44,8 @@ public class LiveFragment extends Fragment {
 
     private void initListener() {
         WebView webView = new WebView(getActivity());
+        LiveInterface liveInterface = new LiveInterface(getActivity());
+        webView.addJavascriptInterface(liveInterface, "Android");
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
         webView.loadUrl(url);
@@ -84,17 +86,14 @@ public class LiveFragment extends Fragment {
 
 
     public class LiveInterface{
-
         public Context context;
-
         public  LiveInterface(Context c){
             this.context = c;
         }
-
         @android.webkit.JavascriptInterface
         public void detail(String liveId){
-            Intent intent = new Intent(getActivity(),Main.class);
-            intent.putExtra("useId",liveId);
+            Intent intent = new Intent(getActivity(),LiveDetailsActivity.class);
+            intent.putExtra("details",liveId);
             startActivity(intent);
         }
     }

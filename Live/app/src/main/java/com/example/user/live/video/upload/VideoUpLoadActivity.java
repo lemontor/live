@@ -1,10 +1,12 @@
 package com.example.user.live.video.upload;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PaintDrawable;
 import android.net.ConnectivityManager;
@@ -19,7 +21,6 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-
 import com.example.user.live.R;
 import com.example.user.live.utils.CacheUtils;
 import com.example.user.live.video.adapter.VideoFailAdapter;
@@ -28,16 +29,15 @@ import com.example.user.live.video.adapter.VideoUpAdapter;
 import com.example.user.live.video.entity.FromActivityEventBean;
 import com.example.user.live.video.entity.FromServiceEventBean;
 import com.example.user.live.video.entity.FromUploadBean;
+import com.example.user.live.video.entity.UpLoadingBean;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.view.CustomProgressBar;
 import com.example.user.live.view.StaticListView;
 import com.google.gson.Gson;
-
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,8 +46,8 @@ import java.util.List;
  */
 public class VideoUpLoadActivity extends Activity implements View.OnClickListener {
 
+    private static final String serviceName = "com.example.user.live.video.upload.UpLoadVideoFileService";
     private StaticListView lvFinish, lvFail, lvLoading;
-    //    private RecyclerView rvLoading;
     private View upViewLoading;
     private TextView tvFinishNotify, tvFinishClear;
     private TextView tvFailNotify, tvFailClear;
@@ -61,45 +61,60 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
     private IntentFilter intentFilter;
     private VideoFinishAdapter videoFinishAdapter;
     private VideoFailAdapter videoFailAdapter;
+    private boolean hasUpLoading = false;
+    private TextView tvBack;
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void upLoadingMethod(UpLoadingBean bean){
+        updateSingle(index, bean.getProgress(), bean.getLen());
+    }
+
 
     /*
     接收上传的信息
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void upLoadEvent(FromUploadBean fromUploadBean) {
-        if (fromUploadBean != null) {
-            if (fromUploadBean.getType() == 1) {//等待中
-                if (videoEntityList != null) {
-                    videoEntityList.get(index).setStatus(7);
-                    videoUpAdapter.notifyDataSetChanged();
+        try {
+            if (fromUploadBean != null) {
+                if (fromUploadBean.getType() == 1) {//等待中
+                    if (videoEntityList != null) {
+                        videoEntityList.get(index).setStatus(7);
+                        videoUpAdapter.notifyDataSetChanged();
+                    }
+                } else if (fromUploadBean.getType() == 2) {//开始
+                    if (videoEntityList != null) {
+                        videoEntityList.get(index).setStatus(2);
+                        videoUpAdapter.notifyDataSetChanged();
+                    }
+                } else if (fromUploadBean.getType() == 3) {//连接失败
+                    upLoadFail();
+                } else if (fromUploadBean.getType() == 4) {//本地文件不存在
+                    if (videoEntityList != null) {
+                        videoEntityList.remove(index);
+                        videoUpAdapter.notifyDataSetChanged();
+                    }
+                } else if (fromUploadBean.getType() == 5) {//暂停
+                    if (videoEntityList != null) {
+                        videoEntityList.get(index).setStatus(6);
+                        videoUpAdapter.notifyDataSetChanged();
+                    }
+                } else if (fromUploadBean.getType() == 6) {//上传中
+                    updateSingle(index, fromUploadBean.getProgress(), fromUploadBean.getLen());
+                } else if (fromUploadBean.getType() == 7) {//上传失败
+                    upLoadFail();
+                } else if (fromUploadBean.getType() == 8) {//上传完成
+                    upLoadFinish();
+                    int size = videoEntityList.size() - 1;
+                    if( size > 0){
+                        tvLoadNotify.setText("进行中（" + size + ")");
+                    }
+
                 }
-            } else if (fromUploadBean.getType() == 2) {//开始
-                Log.e("tag_event_first", "开始下载了");
-                if (videoEntityList != null) {
-                    Log.e("tag_event", "开始下载了");
-                    videoEntityList.get(index).setStatus(2);
-                    videoUpAdapter.notifyDataSetChanged();
-                }
-            } else if (fromUploadBean.getType() == 3) {//连接失败
-                upLoadFail();
-            } else if (fromUploadBean.getType() == 4) {//本地文件不存在
-                if (videoEntityList != null) {
-                    videoEntityList.remove(index);
-                    videoUpAdapter.notifyDataSetChanged();
-                }
-            } else if (fromUploadBean.getType() == 5) {//暂停
-                if (videoEntityList != null) {
-                    videoEntityList.get(index).setStatus(6);
-                    videoUpAdapter.notifyDataSetChanged();
-                }
-            } else if (fromUploadBean.getType() == 6) {//上传中
-                updateSingle(index, fromUploadBean.getProgress(), fromUploadBean.getLen());
-            } else if (fromUploadBean.getType() == 7) {//上传失败
-                upLoadFail();
-            } else if (fromUploadBean.getType() == 8) {//上传完成
-                upLoadFinish();
             }
+        } catch (Exception e) {
         }
+
     }
 
     /*
@@ -115,6 +130,7 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
             videoFinishAdapter.notifyDataSetChanged();
             tvFinishNotify.setText("已完成(" + videoFinishList.size() + ")");
             tvFinishClear.setText("全部清空");
+            tvFinishClear.setTextColor(getResources().getColor(R.color.color_E75B5B));
             videoUpAdapter.notifyDataSetChanged();
             if (videoEntityList.size() == 0) {
                 upViewLoading.setVisibility(View.GONE);
@@ -133,7 +149,10 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
             VideoEntity finishEntity = videoEntityList.remove(index);
             finishEntity.setStatus(6);
             videoFailList.add(finishEntity);
+            hasUpLoading = true;
             tvFailNotify.setText("上传失败(" + videoFailList.size() + ")");
+            tvFailClear.setText("全部清除");
+            tvFailClear.setTextColor(getResources().getColor(R.color.color_E75B5B));
             videoFailAdapter.notifyDataSetChanged();
             videoUpAdapter.notifyDataSetChanged();
             if (videoEntityList.size() == 0) {
@@ -177,18 +196,40 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         videoEntityList = new ArrayList<>();
         videoFinishList = new ArrayList<>();
         videoFailList = new ArrayList<>();
-        videoTotalEntity = (VideoTotalEntity) getIntent().getSerializableExtra("video");
+        int has = getIntent().getIntExtra("has", 0);
+        if (has == 1) {//有数据
+            videoTotalEntity = (VideoTotalEntity) getIntent().getSerializableExtra("video");
+            initVideoData();
+        } else {
+            String info = new CacheUtils().init().getVideoInfoFromCache("v");
+            Log.e("tag_cache", info + "");
+            if (info != null && !info.equals("")) {
+                videoTotalEntity = new Gson().fromJson(info, VideoTotalEntity.class);
+                initVideoData();
+            }
+        }
+    }
+
+    private void initVideoData() {
         if (videoTotalEntity != null) {
-//            new CacheUtils().init().putCacheForVideoInfo(videoTotalEntity);
+            new CacheUtils().init().putCacheForVideoInfo(videoTotalEntity, "v");
             videoEntityList.addAll(videoTotalEntity.getVideoEntities());
-            EventBus.getDefault().postSticky(videoTotalEntity);
-            Intent intent = new Intent(this, UpLoadVideoFileService.class);
-            startService(intent);
-            tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
+            if(isServiceRunning(this,serviceName)){
+
+            }else{
+                EventBus.getDefault().postSticky(videoTotalEntity);
+                Intent intent = new Intent(this, UpLoadVideoFileService.class);
+                startService(intent);
+            }
+            tvLoadNotify.setText("进行中（" + videoEntityList.size() + "）");
         }
     }
 
     private void initUI() {
+        tvBack = (TextView) findViewById(R.id.tv_back);
+        Drawable backDrawable = getResources().getDrawable(R.mipmap.fanhui);
+        tvBack.setCompoundDrawablesWithIntrinsicBounds(backDrawable,null,null,null);
+        tvBack.setOnClickListener(this);
         lvFinish = (StaticListView) findViewById(R.id.lv_finish);
         lvFail = (StaticListView) findViewById(R.id.lv_fail);
         tvLoadNotify = (TextView) findViewById(R.id.tv_notify);
@@ -238,25 +279,13 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
 
             @Override
             public void onStop(int type, int position, int status) {
-                try {
-                    FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
-                    videoEntityList.get(position).setStatus(6);
-                    fromActivityEventBean.setEvent(2);
-                    fromActivityEventBean.setPoi(position);
-                    EventBus.getDefault().post(fromActivityEventBean);
-                } catch (Exception e) {
-                }
-
+                stopVideo();
+                videoUpAdapter.notifyDataSetChanged();
             }
         });
         lvLoading.setAdapter(videoUpAdapter);
         tvSet.setOnClickListener(this);
-        tvLoadClear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
+        tvLoadClear.setOnClickListener(this);
         tvFinishClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -278,20 +307,6 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
             @Override
             public void onReset(int poi) {
                 reUploadData(poi);
-//                VideoEntity videoEntity = videoFailList.remove(poi);
-//                if (videoEntityList.size() == 0) {
-//                    videoEntityList.add(videoEntity);
-//                } else {
-//                    videoEntityList.add(videoEntityList.size() - 1, videoEntity);
-//                }
-//                if (videoFailList.size() == 0) {
-//                    lvFail.setVisibility(View.GONE);
-//                } else {
-//                    videoFailAdapter.notifyDataSetChanged();
-//                }
-//                videoUpAdapter.notifyDataSetChanged();
-//                upViewLoading.setVisibility(View.VISIBLE);
-//                tvLoadNotify.setText("进行中（" + videoEntityList.size() + ")");
                 FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
                 fromActivityEventBean.setEvent(1);
                 fromActivityEventBean.setPoi(index);
@@ -301,8 +316,21 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         lvFail.setAdapter(videoFailAdapter);
     }
 
-    AlertDialog alertDialog;
+    /*
+    停止上传视频
+     */
+    private void  stopVideo(){
+        try {
+            FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
+            videoEntityList.get(index).setStatus(6);
+            fromActivityEventBean.setEvent(2);
+            fromActivityEventBean.setPoi(index);
+            EventBus.getDefault().post(fromActivityEventBean);
+        } catch (Exception e) {
+        }
+    }
 
+    AlertDialog alertDialog;
     private void initDialog() {
         if (alertDialog == null) {
             View view = View.inflate(this, R.layout.dialog_net, null);
@@ -352,11 +380,12 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.tv_clear_ing:
-                //先终止正在上传的视频
+            case R.id.tv_clear_ing: //先终止正在上传的视频
+                stopVideo();
                 videoEntityList.clear();
                 videoUpAdapter.notifyDataSetChanged();
                 mPopNotify.dismiss();
+                upViewLoading.setVisibility(View.GONE);
                 break;
             case R.id.tv_reset:
                 if (videoEntityList.size() == 0) {
@@ -369,7 +398,7 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
                 }
                 mPopNotify.dismiss();
                 break;
-            case R.id.tv_clear_fail:
+            case R.id.tv_clear_fail://清空失败项
                 videoFailList.clear();
                 lvFail.setVisibility(View.GONE);
                 mPopNotify.dismiss();
@@ -381,10 +410,16 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
                 initPop();
                 mPopNotify.showAtLocation(rootView, Gravity.CENTER, 0, 0);
                 break;
+            case R.id.tv_clear://全部暂停
+                stopVideo();
+                break;
+            case R.id.tv_back:
+                finish();
+                break;
         }
     }
 
-    boolean  isCloseWifi = false;
+    boolean isCloseWifi = false;
 
     /*
     监听网络变化
@@ -397,7 +432,7 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
             if (networkInfo != null && networkInfo.isAvailable()) {
                 switch (networkInfo.getType()) {
                     case ConnectivityManager.TYPE_MOBILE:
-                        Log.e("tag_info","手机网络");
+                        Log.e("tag_info", "手机网络");
                         initDialog();
                         videoEntityList.get(index).setStatus(9);
                         videoUpAdapter.notifyDataSetChanged();
@@ -407,13 +442,20 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
                         EventBus.getDefault().post(fromActivityEventBean);
                         break;
                     case ConnectivityManager.TYPE_WIFI:
-                        if(isCloseWifi){
+                        if (isCloseWifi) {
                             reUploadData(index);
                             FromActivityEventBean reStartActivityEventBean = new FromActivityEventBean();
                             reStartActivityEventBean.setEvent(1);
                             reStartActivityEventBean.setPoi(index);
                             EventBus.getDefault().post(reStartActivityEventBean);
-//                            videoEntityList.get(index).setStatus(2);
+//                            if(videoEntityList != null&& videoEntityList.size() > 0){
+//                                VideoTotalEntity videoTotalEntity = new VideoTotalEntity();
+//                                videoTotalEntity.setVideoEntities(videoEntityList);
+//                                EventBus.getDefault().postSticky(videoTotalEntity);
+//                                Intent intent1 = new Intent(VideoUpLoadActivity.this, UpLoadVideoFileService.class);
+//                                startService(intent1);
+//                            }
+                            videoEntityList.get(index).setStatus(2);
                             isCloseWifi = false;
                         }
                         break;
@@ -422,7 +464,7 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
                 }
             } else {
                 isCloseWifi = true;
-                Log.e("tag_info","网络不可用");
+                Log.e("tag_info", "网络不可用");
                 initDialog();
                 FromActivityEventBean fromActivityEventBean = new FromActivityEventBean();
                 fromActivityEventBean.setPoi(index);
@@ -469,7 +511,7 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         videoUpAdapter.notifyDataSetChanged();
     }
 
-    private void  reUploadData(int poi){
+    private void reUploadData(int poi) {
         VideoEntity videoEntity = videoFailList.remove(poi);
         if (videoEntityList.size() == 0) {
             videoEntityList.add(videoEntity);
@@ -487,7 +529,6 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
     }
 
 
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -495,5 +536,26 @@ public class VideoUpLoadActivity extends Activity implements View.OnClickListene
         EventBus.getDefault().unregister(this);
     }
 
+
+    /**
+     * 判断服务是否开启
+     *
+     * @return
+     */
+    public static boolean isServiceRunning(Context context, String ServiceName) {
+        if (("").equals(ServiceName) || ServiceName == null)
+            return false;
+        ActivityManager myManager = (ActivityManager) context
+                .getSystemService(Context.ACTIVITY_SERVICE);
+        ArrayList<ActivityManager.RunningServiceInfo> runningService = (ArrayList<ActivityManager.RunningServiceInfo>) myManager
+                .getRunningServices(30);
+        for (int i = 0; i < runningService.size(); i++) {
+            if (runningService.get(i).service.getClassName().toString()
+                    .equals(ServiceName)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }

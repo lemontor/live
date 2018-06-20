@@ -17,7 +17,8 @@ import cn.jpush.android.api.JPushInterface;
 public class App extends Application {
 
     private  static RequestQueue  requestQueue;
-    private static App app;
+    private  static App app;
+    public  static int upCount = 0;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -43,6 +44,7 @@ public class App extends Application {
     public static App getInstance(){
         return app;
     }
+
 
 
     private void initPush() {

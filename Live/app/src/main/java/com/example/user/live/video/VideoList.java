@@ -14,6 +14,7 @@ import com.example.user.live.R;
 import com.example.user.live.utils.GetVideoDataUtils;
 import com.example.user.live.utils.ToastUtils;
 import com.example.user.live.video.adapter.VideoListAdapter;
+import com.example.user.live.video.entity.V;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.video.entity.VideoUpInfoBean;
@@ -39,7 +40,7 @@ public class VideoList extends Activity {
     private LoadDialog loadDialog;
     private VideoListAdapter adapter;
     private List<VideoTotalEntity> videoData;
-    private Map<Integer,List<VideoEntity>> cancelData;
+    private Map<Integer, List<VideoEntity>> cancelData;
     private TextView tvTitle, tvUp;
     private SwitchCompat switchCompat;
     private List<VideoUpInfoBean.VideoBean> videoUpInfoBeanList = new ArrayList<>();
@@ -102,9 +103,12 @@ public class VideoList extends Activity {
                     }
                     Intent intent = new Intent(VideoList.this, VideoUpLoadActivity.class);
                     intent.putExtra("video", totalEntity);
+                    intent.putExtra("has", 1);
                     startActivity(intent);
                 } else {
-                    ToastUtils.showToast(VideoList.this, "请选择上传的视频");
+                    Intent intent = new Intent(VideoList.this, VideoUpLoadActivity.class);
+                    intent.putExtra("has", 2);
+                    startActivity(intent);
                 }
             }
         });
@@ -113,10 +117,13 @@ public class VideoList extends Activity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 Log.e("tag_switch", b + "");
                 if (b) {
+                    cancelData.clear();
+                    keys.clear();
                     upData();
+                    Log.e("tag_cancel", cancelData.toString() + "");
                     adapter.notifyDataSetChanged();
-                }else{
-                    if(cancelData.size() > 0){
+                } else {
+                    if (cancelData.size() > 0) {
                         restoreData();
                         adapter.notifyDataSetChanged();
                     }
@@ -161,13 +168,29 @@ public class VideoList extends Activity {
                 }
             } else {
                 List<VideoTotalEntity> findInfo = findData(temp);
-                if(findInfo != null && findInfo.size() > 0){
+                if (findInfo != null && findInfo.size() > 0) {
                     videoData.addAll(findInfo);
                     adapter.notifyDataSetChanged();
                 }
             }
         }
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEventReceive(V v) {
+        if (v != null) {
+            for (VideoTotalEntity videoTotalEntity : videoData) {
+                for (VideoEntity videoEntity : videoTotalEntity.getVideoEntities()) {
+                    if (videoEntity.getTitle().contains(v.getFileName())) {
+                        videoEntity.setUp(true);
+                        adapter.notifyDataSetChanged();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
 
     private List<VideoTotalEntity> orgData(Map<String, List<VideoEntity>> data) {
         List<VideoTotalEntity> totalEntityList = new ArrayList<>();
@@ -239,21 +262,25 @@ public class VideoList extends Activity {
                     }
                 }
             }
+            Log.e("tag_all", videoData.toString() + "");
         }
     }
 
+    private Map<Integer, String> keys = new HashMap<>();
+
     private boolean cancelVideo(VideoTotalEntity videoTotalEntity, VideoUpInfoBean.VideoBean videoBean, int poi) {
-        cancelData.clear();
         for (int j = 0; j < videoTotalEntity.getVideoEntities().size(); j++) {
             VideoEntity videoEntity = videoTotalEntity.getVideoEntities().get(j);
             if (videoEntity.getPath().contains(videoBean.getFile_name())) {
                 VideoEntity video = videoTotalEntity.getVideoEntities().remove(j);
-                if(cancelData.containsKey(poi)){
+                if (cancelData.containsKey(poi)) {
                     cancelData.get(poi).add(video);
-                }else{
-                    List<VideoEntity>  newList = new ArrayList<>();
+                    keys.put(poi, videoTotalEntity.getTitle());
+                } else {
+                    List<VideoEntity> newList = new ArrayList<>();
                     newList.add(video);
-                    cancelData.put(poi,newList);
+                    cancelData.put(poi, newList);
+                    keys.put(poi, videoTotalEntity.getTitle());
                 }
                 if (videoTotalEntity.getVideoEntities().size() == 0) {
                     videoData.remove(poi);
@@ -294,11 +321,20 @@ public class VideoList extends Activity {
     /*
     恢复全部数据
      */
-    private void restoreData(){
+    private void restoreData() {
         for (Map.Entry<Integer, List<VideoEntity>> entry : cancelData.entrySet()) {
             int key = entry.getKey();
-            videoData.get(key).getVideoEntities().addAll(entry.getValue());
+            if (videoData.size() > 0) {
+                videoData.get(key).getVideoEntities().addAll(entry.getValue());
+            } else {
+                VideoTotalEntity totalEntity = new VideoTotalEntity();
+                totalEntity.setVideoEntities(entry.getValue());
+                totalEntity.setTitle(keys.get(key));
+                totalEntity.setChose(false);
+                videoData.add(totalEntity);
+            }
         }
+        Log.e("tag_restore", videoData.toString() + "");
     }
 
     @Override

@@ -5,7 +5,7 @@ package com.example.user.live.utils;
  */
 public class ConstantUtils {
     public static final String BASE_URL = "http://210.12.56.75:8777";
-    //    public static final String BASE_URL = "http://study.huatec.com";  //测试地址
+//        public static final String BASE_URL = "http://study.huatec.com";
     public static final String URL = "http://192.168.11.10:8773";
     //根据直播id查询评论列表（直播中的评论查询）需4条
     public static final String GET_CONTENT_PERSON_COUNT = BASE_URL + "/message/directVideoComment/H5commentList";
