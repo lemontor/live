@@ -12,6 +12,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.user.live.live.LiveFragment;
+import com.example.user.live.utils.CacheUtils;
 import com.example.user.live.utils.ToastUtils;
 import com.example.user.live.video.VideoFragment;
 
@@ -39,6 +41,7 @@ public class Main extends AppCompatActivity {
     private FrameLayout  layoutNotify;
     private TextView  tvNetNotify;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +51,8 @@ public class Main extends AppCompatActivity {
         initListener();
         showFragment(liveFragment);
     }
+
+
 
     private void initListener() {
         tvLive.setOnClickListener(new View.OnClickListener() {
@@ -71,7 +76,12 @@ public class Main extends AppCompatActivity {
                 showFragment(videoFragment);
             }
         });
+    }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.e("tag_onRestart","onReStart");
     }
 
     private void initObj() {
@@ -119,7 +129,7 @@ public class Main extends AppCompatActivity {
             if (networkInfo != null && networkInfo.isAvailable()) {
                 switch (networkInfo.getType()) {
                     case ConnectivityManager.TYPE_MOBILE:
-                        layoutNotify.setVisibility(View.VISIBLE);
+                        layoutNotify.setVisibility(View.GONE);
                         break;
                     case ConnectivityManager.TYPE_WIFI:
                         layoutNotify.setVisibility(View.GONE);
@@ -157,4 +167,10 @@ public class Main extends AppCompatActivity {
         super.onDestroy();
         unregisterReceiver(networkChangeReceiver);
     }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    }
+
 }

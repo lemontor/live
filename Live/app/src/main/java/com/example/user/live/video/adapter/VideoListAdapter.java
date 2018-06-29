@@ -2,16 +2,20 @@ package com.example.user.live.video.adapter;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+
 import com.example.user.live.R;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.view.NoScroolGridView;
+
 import java.security.cert.PolicyNode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -69,8 +73,26 @@ public class VideoListAdapter extends BaseAdapter {
             Drawable leftDrawable = context.getResources().getDrawable(R.mipmap.oval);
             vh.tvTitle.setCompoundDrawablesWithIntrinsicBounds(leftDrawable, null, null, null);
         }
+        List<VideoEntity> videoEntityList = new ArrayList<>();
 
-        final VideoGvAdapter gvAdapter = new VideoGvAdapter(context, videoTotalEntities.get(i).getVideoEntities());
+        if (isAll) {
+            vh.tvTitle.setVisibility(View.VISIBLE);
+            videoEntityList.addAll(videoTotalEntities.get(i).getVideoEntities());
+        } else {
+            if (isAll(videoTotalEntities.get(i).getVideoEntities())) {
+                vh.tvTitle.setVisibility(View.GONE);
+            } else {
+                vh.tvTitle.setVisibility(View.VISIBLE);
+            }
+            for (int j = 0; j < videoTotalEntities.get(i).getVideoEntities().size(); j++) {
+                if (!videoTotalEntities.get(i).getVideoEntities().get(j).isUp()){
+                    videoEntityList.add(videoTotalEntities.get(i).getVideoEntities().get(j));
+                }
+            }
+        }
+
+
+        final VideoGvAdapter gvAdapter = new VideoGvAdapter(context, videoEntityList, isAll);
         vh.gvPic.setAdapter(gvAdapter);
         gvAdapter.setOnChoseListener(new VideoGvAdapter.OnChoseListener() {
             @Override
@@ -104,6 +126,16 @@ public class VideoListAdapter extends BaseAdapter {
     }
 
 
+    private boolean isAll(List<VideoEntity> temp) {
+        for (VideoEntity videoEntity : temp) {
+            if (!videoEntity.isUp()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     class ViewHolder {
         public TextView tvTitle;
         public NoScroolGridView gvPic;
@@ -125,6 +157,14 @@ public class VideoListAdapter extends BaseAdapter {
         public void send(int poi, int childPoi, boolean isChose);
 
         public void choseAll(int poi, boolean isChose);
+    }
+
+
+    public boolean isAll = true;
+
+    public void getUpLoad(boolean all) {
+        this.isAll = all;
+        notifyDataSetChanged();
     }
 
 

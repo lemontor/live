@@ -20,7 +20,16 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
     private int   progress;
     private int  longDuration;
     private boolean  isUp = false;
+    private boolean  isFail = false;
 
+
+    public boolean isFail() {
+        return isFail;
+    }
+
+    public void setFail(boolean fail) {
+        isFail = fail;
+    }
 
     public boolean isUp() {
         return isUp;
@@ -142,9 +151,13 @@ public class VideoEntity implements Serializable ,Comparator<VideoEntity>{
                 ", size='" + size + '\'' +
                 ", timeStatus='" + timeStatus + '\'' +
                 ", isChose=" + isChose +
+                ", status=" + status +
+                ", progress=" + progress +
+                ", longDuration=" + longDuration +
+                ", isUp=" + isUp +
+                ", isFail=" + isFail +
                 '}';
     }
-
 
     @Override
     public int compare(VideoEntity videoEntity, VideoEntity t1) {

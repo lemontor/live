@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.example.user.live.app.App;
+import com.example.user.live.video.entity.VideoEntity;
+import com.example.user.live.video.entity.VideoTotalEntity;
+import com.google.gson.Gson;
 
 /**
  * Created by user on 2018/4/23.
@@ -20,7 +23,7 @@ public class SharedPreferencesUtils {
 
     public void putString(String key,String value){
         editor.putString(key,value);
-        editor.apply();
+        editor.commit();
     }
 
     public String getString(String key){
@@ -29,12 +32,7 @@ public class SharedPreferencesUtils {
 
     public void clear(String key){
         editor.remove(key);
-        editor.clear();
+        editor.commit();
     }
-
-
-
-
-
 
 }

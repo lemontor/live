@@ -363,7 +363,6 @@ public class VolleyUtils {
             @Override
             public void onResponse(String response) {
                 listener.onResponse(response);
-
             }
 
             @Override

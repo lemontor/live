@@ -2,6 +2,8 @@ package com.example.user.live.video;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -16,11 +18,13 @@ import android.widget.RelativeLayout;
 import com.android.volley.VolleyError;
 import com.example.user.live.R;
 import com.example.user.live.app.App;
+import com.example.user.live.utils.CacheUtils;
 import com.example.user.live.utils.ConstantUtils;
 import com.example.user.live.utils.SharedPreferencesUtils;
 import com.example.user.live.utils.ToastUtils;
 import com.example.user.live.utils.VolleyUtils;
 import com.example.user.live.video.adapter.VideoUpedAdapter;
+import com.example.user.live.video.entity.UpLoadingBean;
 import com.example.user.live.video.entity.VideoUpInfoBean;
 import com.example.user.live.video.upload.VideoUpLoadActivity;
 import com.google.gson.Gson;
@@ -29,6 +33,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,15 +53,50 @@ public class VideoFragment extends Fragment {
     private VideoUpInfoBean videoUpInfoBean;
     private ImageView ivUp;
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void updateVideo(VideoUpInfoBean.VideoBean  videoBean) {
-        if(videoBean != null){
-            loadData(sharedPreferencesUtils.getString(ConstantUtils.USER_ID));
-            if(App.upCount > 0){
+
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            Log.e("tag_handler", App.upCount + "");
+            if (App.upCount > 0) {
                 ivUp.setVisibility(View.VISIBLE);
-            }else{
+            } else {
                 ivUp.setVisibility(View.GONE);
             }
+            handler.sendEmptyMessageDelayed(1001, 2000);
+        }
+    };
+
+//    private  static  class  EventHandler extends Handler {
+//        private  final WeakReference<VideoUpLoadActivity> mActivity;
+//        public EventHandler(VideoUpLoadActivity activity){
+//            mActivity = new WeakReference<VideoUpLoadActivity>(activity);
+//        }
+//        @Override
+//        public void handleMessage(Message msg) {
+//            VideoUpLoadActivity  activity = mActivity.get();
+//            if(activity != null){
+//                if(msg.what == 1001){//进度更新
+//                    UpLoadingBean bean = (UpLoadingBean) msg.obj;
+//                    if(bean != null){
+//                        activity.updateSingle(activity.index, bean.getProgress(), bean.getLen());
+////                       bean.recycle();
+//                    }
+//                }else if(msg.what == 1002){
+//                }
+//            }
+//        }
+//    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void updateVideo(VideoUpInfoBean.VideoBean videoBean) {
+        if (videoBean != null) {
+            if (videoBean.getType() == 1) {//上传完成
+                loadData(sharedPreferencesUtils.getString(ConstantUtils.USER_ID));
+            }
+
         }
     }
 
@@ -72,6 +112,13 @@ public class VideoFragment extends Fragment {
         return contentView;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        handler.sendEmptyMessageDelayed(1001, 2000);
+    }
+
+
     private void initData() {
         loadData(sharedPreferencesUtils.getString(ConstantUtils.USER_ID));
     }
@@ -81,14 +128,9 @@ public class VideoFragment extends Fragment {
         layoutList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(App.upCount == 0){
-                    ToastUtils.showToast(getActivity(),"暂无视频上传...");
-                }else{
-                    Intent intent = new Intent(getActivity(), VideoUpLoadActivity.class);
-                    intent.putExtra("has",2);
-                    startActivity(intent);
-                }
-
+                Intent intent = new Intent(getActivity(), VideoUpLoadActivity.class);
+                intent.putExtra("has", 2);
+                startActivity(intent);
             }
         });
 
@@ -100,7 +142,6 @@ public class VideoFragment extends Fragment {
                 EventBus.getDefault().postSticky(videoUpInfoBean);
                 Intent intent = new Intent(getActivity(), VideoList.class);
                 startActivity(intent);
-
             }
         });
     }
@@ -140,7 +181,6 @@ public class VideoFragment extends Fragment {
 
             @Override
             public void onErrorResponse(VolleyError error) {
-//                Log.e("tag_onErrorResponse", error.getMessage());
             }
         });
     }
@@ -149,6 +189,7 @@ public class VideoFragment extends Fragment {
     @Override
     public void onDestroy() {
         EventBus.getDefault().unregister(this);
+        handler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
 }

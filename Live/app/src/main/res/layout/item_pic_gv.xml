@@ -40,18 +40,17 @@
                 android:visibility="gone"
                 />
         </RelativeLayout>
+        <ImageView
+            android:id="@+id/cb_chose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="8dp"
+            android:src="@mipmap/oval"
+            />
     </RelativeLayout>
 
-    <ImageView
-        android:id="@+id/cb_chose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignEnd="@+id/iv_pic"
-        android:layout_marginTop="8dp"
-        android:layout_marginLeft="8dp"
-        android:src="@mipmap/oval"
-        />
+
 
 
 </FrameLayout>

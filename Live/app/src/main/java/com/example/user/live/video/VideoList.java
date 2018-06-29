@@ -2,6 +2,7 @@ package com.example.user.live.video;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
@@ -11,9 +12,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.user.live.R;
+import com.example.user.live.app.App;
 import com.example.user.live.utils.GetVideoDataUtils;
 import com.example.user.live.utils.ToastUtils;
 import com.example.user.live.video.adapter.VideoListAdapter;
+import com.example.user.live.video.entity.UpdateVideoBean;
 import com.example.user.live.video.entity.V;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
@@ -41,7 +44,7 @@ public class VideoList extends Activity {
     private VideoListAdapter adapter;
     private List<VideoTotalEntity> videoData;
     private Map<Integer, List<VideoEntity>> cancelData;
-    private TextView tvTitle, tvUp;
+    private TextView tvTitle, tvUp, tvBack;
     private SwitchCompat switchCompat;
     private List<VideoUpInfoBean.VideoBean> videoUpInfoBeanList = new ArrayList<>();
 
@@ -54,7 +57,6 @@ public class VideoList extends Activity {
         initObj();
         initData();
         initListener();
-
     }
 
     private void initListener() {
@@ -75,7 +77,6 @@ public class VideoList extends Activity {
                         adapter.notifyDataSetChanged();
                     }
                 }
-                Log.e("tag_send", videoData.toString() + "");
             }
 
             @Override
@@ -87,7 +88,6 @@ public class VideoList extends Activity {
                         entity.setChose(isChose);
                     }
                 }
-                Log.e("tag_send_choseAll", videoData.toString() + "");
             }
         });
         tvUp.setOnClickListener(new View.OnClickListener() {
@@ -97,18 +97,20 @@ public class VideoList extends Activity {
                 if (data != null && data.size() > 0) {
                     VideoTotalEntity totalEntity = new VideoTotalEntity();
                     totalEntity.setVideoEntities(data);
-                    totalEntity.getVideoEntities().get(0).setStatus(2);
-                    if (totalEntity.getVideoEntities().size() >= 2) {
-                        totalEntity.getVideoEntities().get(1).setStatus(6);
-                    }
+                    totalEntity.getVideoEntities().get(0).setStatus(7);
                     Intent intent = new Intent(VideoList.this, VideoUpLoadActivity.class);
                     intent.putExtra("video", totalEntity);
                     intent.putExtra("has", 1);
                     startActivity(intent);
                 } else {
-                    Intent intent = new Intent(VideoList.this, VideoUpLoadActivity.class);
-                    intent.putExtra("has", 2);
-                    startActivity(intent);
+                    if (App.upCount == 0) {
+                        ToastUtils.showToast(VideoList.this, "请选择视频");
+                    } else {
+                        Intent intent = new Intent(VideoList.this, VideoUpLoadActivity.class);
+                        intent.putExtra("has", 2);
+                        startActivity(intent);
+                    }
+
                 }
             }
         });
@@ -117,19 +119,19 @@ public class VideoList extends Activity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 Log.e("tag_switch", b + "");
                 if (b) {
-                    cancelData.clear();
-                    keys.clear();
-                    upData();
-                    Log.e("tag_cancel", cancelData.toString() + "");
-                    adapter.notifyDataSetChanged();
+                    adapter.getUpLoad(false);
                 } else {
-                    if (cancelData.size() > 0) {
-                        restoreData();
-                        adapter.notifyDataSetChanged();
-                    }
+                    adapter.getUpLoad(true);
                 }
             }
         });
+        tvBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
     }
 
 
@@ -173,6 +175,7 @@ public class VideoList extends Activity {
                     adapter.notifyDataSetChanged();
                 }
             }
+            Log.e("tag_videoData",videoData.toString());
         }
     }
 
@@ -191,6 +194,24 @@ public class VideoList extends Activity {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void updateVideoData(UpdateVideoBean updateVideoBean){
+        if(updateVideoBean != null){
+
+        }
+    }
+
+    public void updateInfo(UpdateVideoBean updateVideoBean){
+        for(VideoTotalEntity videoTotalEntity : videoData){
+             for(VideoEntity videoEntity : videoTotalEntity.getVideoEntities()){
+                 if(videoEntity.getTitle().equals(updateVideoBean.getFileName())){
+                     videoEntity.setFail(true);
+                     break;
+                 }
+             }
+        }
+    }
+
 
     private List<VideoTotalEntity> orgData(Map<String, List<VideoEntity>> data) {
         List<VideoTotalEntity> totalEntityList = new ArrayList<>();
@@ -205,6 +226,8 @@ public class VideoList extends Activity {
 
 
     private void initData() {
+        Drawable leftDrawable = getResources().getDrawable(R.mipmap.fanhui);
+        tvBack.setCompoundDrawablesWithIntrinsicBounds(leftDrawable, null, null, null);
         VideoUpInfoBean stickyEvent = EventBus.getDefault().getStickyEvent(VideoUpInfoBean.class);
         if (stickyEvent != null) {
             if (stickyEvent.getData() != null && stickyEvent.getData().size() > 0) {
@@ -217,6 +240,7 @@ public class VideoList extends Activity {
     private void initUI() {
         tvTitle = (TextView) findViewById(R.id.tv_title);
         tvUp = (TextView) findViewById(R.id.tv_set);
+        tvBack = (TextView) findViewById(R.id.tv_back);
         mLvVideo = (ListView) findViewById(R.id.lv_video);
         switchCompat = (SwitchCompat) findViewById(R.id.switch_single);
         View emptyView = findViewById(R.id.layout_empty);
@@ -252,44 +276,6 @@ public class VideoList extends Activity {
         return videoEntityList;
     }
 
-    private void upData() {
-        if (videoUpInfoBeanList.size() > 0) {
-            for (VideoUpInfoBean.VideoBean videoBean : videoUpInfoBeanList) {
-                for (int i = 0; i < videoData.size(); i++) {
-                    VideoTotalEntity videoTotalEntity = videoData.get(i);
-                    if (cancelVideo(videoTotalEntity, videoBean, i)) {
-                        break;
-                    }
-                }
-            }
-            Log.e("tag_all", videoData.toString() + "");
-        }
-    }
-
-    private Map<Integer, String> keys = new HashMap<>();
-
-    private boolean cancelVideo(VideoTotalEntity videoTotalEntity, VideoUpInfoBean.VideoBean videoBean, int poi) {
-        for (int j = 0; j < videoTotalEntity.getVideoEntities().size(); j++) {
-            VideoEntity videoEntity = videoTotalEntity.getVideoEntities().get(j);
-            if (videoEntity.getPath().contains(videoBean.getFile_name())) {
-                VideoEntity video = videoTotalEntity.getVideoEntities().remove(j);
-                if (cancelData.containsKey(poi)) {
-                    cancelData.get(poi).add(video);
-                    keys.put(poi, videoTotalEntity.getTitle());
-                } else {
-                    List<VideoEntity> newList = new ArrayList<>();
-                    newList.add(video);
-                    cancelData.put(poi, newList);
-                    keys.put(poi, videoTotalEntity.getTitle());
-                }
-                if (videoTotalEntity.getVideoEntities().size() == 0) {
-                    videoData.remove(poi);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
 
     private List<VideoTotalEntity> findData(List<VideoTotalEntity> temp) {
         for (VideoUpInfoBean.VideoBean videoBean : videoUpInfoBeanList) {
@@ -315,26 +301,6 @@ public class VideoList extends Activity {
             }
         }
         return false;
-    }
-
-
-    /*
-    恢复全部数据
-     */
-    private void restoreData() {
-        for (Map.Entry<Integer, List<VideoEntity>> entry : cancelData.entrySet()) {
-            int key = entry.getKey();
-            if (videoData.size() > 0) {
-                videoData.get(key).getVideoEntities().addAll(entry.getValue());
-            } else {
-                VideoTotalEntity totalEntity = new VideoTotalEntity();
-                totalEntity.setVideoEntities(entry.getValue());
-                totalEntity.setTitle(keys.get(key));
-                totalEntity.setChose(false);
-                videoData.add(totalEntity);
-            }
-        }
-        Log.e("tag_restore", videoData.toString() + "");
     }
 
     @Override

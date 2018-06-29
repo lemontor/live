@@ -17,20 +17,22 @@ import com.example.user.live.R;
 public class LiveDetailsActivity extends Activity {
 
     private WebView webView;
-    private String url = "http://210.12.56.75:8266/mobile/jianjie.html?id=";
+    private String url = "http://study.huatec.com/mobile/jianjie.html?id=";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_details_activity);
         webView = (WebView) findViewById(R.id.web);
-        String id = getIntent().getStringExtra("details");
-        url = url+id;
-        Log.e("tag_url",url);
-        WebAppInterface webAppInterface = new WebAppInterface(this);
-        webView.addJavascriptInterface(webAppInterface, "Android");
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+        String id = getIntent().getStringExtra("details");
+        url = url + id;
+        Log.e("tag_url", url);
+        WebAppInterface webAppInterface = new WebAppInterface(this);
+        BackAppInterface backAppInterface = new BackAppInterface(this);
+        webView.addJavascriptInterface(webAppInterface, "Android");
+        webView.addJavascriptInterface(backAppInterface, "And");
         webView.loadUrl(url);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
@@ -58,6 +60,21 @@ public class LiveDetailsActivity extends Activity {
             bundle.putString("teacherId", teacherId);
             intent.putExtras(bundle);
             startActivity(intent);
+        }
+    }
+
+
+    public class BackAppInterface {
+
+        public Context context;
+
+        public BackAppInterface(Context c) {
+            this.context = c;
+        }
+
+        @android.webkit.JavascriptInterface
+        public void backLive() {
+            finish();
         }
     }
 

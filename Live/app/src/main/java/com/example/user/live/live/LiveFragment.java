@@ -29,7 +29,8 @@ public class LiveFragment extends Fragment {
 
     private LinearLayout layoutWebView;
     private View contentView;
-    private String url = "http://210.12.56.75:8266/mobile/liebiao.html";
+//    private String url = "http://210.12.56.75:8266/mobile/liebiao.html";
+    private String url = "http://study.huatec.com/mobile/liebiao.html";
     private String useId;
 
 

@@ -1,5 +1,6 @@
 package com.example.user.live.app;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.support.multidex.MultiDex;
@@ -8,6 +9,10 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 import com.duanqu.qupai.jni.ApplicationGlue;
+import com.example.user.live.video.entity.VideoEntity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
 
@@ -18,7 +23,10 @@ public class App extends Application {
 
     private  static RequestQueue  requestQueue;
     private  static App app;
-    public  static int upCount = 0;
+    public   static int upCount;
+    public static Activity activity = null;
+    public static List<VideoEntity>  videoEntityList = new ArrayList<>();
+    public static boolean  isRunning;
 
     @Override
     protected void attachBaseContext(Context base) {

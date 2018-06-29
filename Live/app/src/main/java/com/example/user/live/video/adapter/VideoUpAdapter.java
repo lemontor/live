@@ -1,11 +1,17 @@
 package com.example.user.live.video.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.media.ThumbnailUtils;
+import android.os.Build;
+import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -26,12 +32,23 @@ public class VideoUpAdapter extends BaseAdapter{
     private Context context;
     private List<VideoEntity> videoEntityList;
     private LayoutInflater inflater;
+    static int mGridWidth;
 
     public VideoUpAdapter(Context context, List<VideoEntity> videoEntityList, OnStartClickListener onStartClickListener) {
         this.context = context;
         this.videoEntityList = videoEntityList;
         this.onStartClickListener = onStartClickListener;
         inflater = LayoutInflater.from(context);
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int width = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            Point size = new Point();
+            wm.getDefaultDisplay().getSize(size);
+            width = size.x;
+        } else {
+            width = wm.getDefaultDisplay().getWidth();
+        }
+        mGridWidth = width / 4;
     }
 
     @Override
@@ -60,13 +77,15 @@ public class VideoUpAdapter extends BaseAdapter{
             holder = (UpViewHolder) view.getTag();
         }
 
-        GlideUtils.loadLocalPic(context, videoEntityList.get(position).getThumbPath(), holder.ivPic);
+        GlideUtils.loadLocalPic(context, videoEntityList.get(position).getPath(), holder.ivPic);
+//        holder.ivPic.setImageBitmap(getVideoThumbnail(videoEntityList.get(position).getPath(),mGridWidth,mGridWidth, MediaStore.Video.Thumbnails.MINI_KIND));
+
         holder.tvTitle.setText(videoEntityList.get(position).getTitle());
         holder.tvTotalProgress.setText("/" + videoEntityList.get(position).getSize());
 //        holder.tvLoadingProgress.setText(videoEntityList.get(position).getSize());
         holder.pbLoading.setPercent(videoEntityList.get(position).getProgress());
         if (videoEntityList.get(position).getStatus() == 2) {//正在上传
-            holder.tvLoadingStatus.setText("正在下载");
+            holder.tvLoadingStatus.setText("正在上传");
             holder.ivStart.setImageResource(R.mipmap.spsc_zhengzaishangchuan);
         } else if (videoEntityList.get(position).getStatus() == 6) {//暂停
             holder.tvLoadingStatus.setText("已暂停");
@@ -89,6 +108,8 @@ public class VideoUpAdapter extends BaseAdapter{
                     onStartClickListener.onStop(2, position, 6);//变为暂停
                 } else if (videoEntityList.get(position).getStatus() == 6) {
                     onStartClickListener.onStart(2, position, 2);//变为开始
+                } else if(videoEntityList.get(position).getStatus() == 9){//WIFI环境下
+                    onStartClickListener.onNetChange(2, position, 9);//变为开始
                 }
             }
         });
@@ -111,13 +132,25 @@ public class VideoUpAdapter extends BaseAdapter{
             pbLoading = (CustomProgressBar) itemView.findViewById(R.id.pb_progress);
         }
     }
-
+    public static Bitmap getVideoThumbnail(String videoPath, int width, int height, int kind) {
+        Bitmap bitmap = null;
+        // 获取视频的缩略图
+        bitmap = ThumbnailUtils.createVideoThumbnail(videoPath, kind);
+        if(bitmap!= null){
+            bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height,
+                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+        }
+        return bitmap;
+    }
     OnStartClickListener onStartClickListener;
 
     public interface OnStartClickListener {
         public void onStart(int type, int position, int status);
 
         public void onStop(int type, int position, int status);
+
+        public void onNetChange(int type, int position, int status);
+
     }
 
 

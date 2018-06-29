@@ -8,7 +8,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -16,6 +18,7 @@ import android.widget.RemoteViews;
 import com.android.volley.VolleyError;
 import com.example.user.live.R;
 import com.example.user.live.app.App;
+import com.example.user.live.utils.CacheUtils;
 import com.example.user.live.utils.ConstantUtils;
 import com.example.user.live.utils.FtpUpLoadUtils;
 import com.example.user.live.utils.FtpUtils;
@@ -26,16 +29,23 @@ import com.example.user.live.video.entity.FromServiceEventBean;
 import com.example.user.live.video.entity.FromUploadBean;
 import com.example.user.live.video.entity.FromUploadEventBean;
 import com.example.user.live.video.entity.FtpUploadInfoEntity;
+import com.example.user.live.video.entity.UpLoadingBean;
 import com.example.user.live.video.entity.V;
 import com.example.user.live.video.entity.VideoEntity;
 import com.example.user.live.video.entity.VideoTotalEntity;
 import com.example.user.live.video.entity.VideoUpInfoBean;
+import com.google.gson.Gson;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by user on 2018/5/29.
@@ -55,11 +65,13 @@ public class UpLoadVideoFileService extends Service {
     private String duration;
     private int intDuration;
     private String thumb;
+    private String path;
+    private boolean isFail = false;
     private FtpUploadInfoEntity entity;
     private FtpUtils ftpUtils;
     private VolleyUtils volleyUtils;
     private SharedPreferencesUtils sharedPreferencesUtils;
-
+    private List<VideoEntity> failVideo = new ArrayList<>();
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void fromActivityEvent(FromActivityEventBean activityEventBean) {
@@ -74,6 +86,7 @@ public class UpLoadVideoFileService extends Service {
                 duration = videoEntityList.get(index).getDuration();
                 intDuration = videoEntityList.get(index).getLongDuration();
                 thumb = videoEntityList.get(index).getThumbPath();
+                isFail = videoEntityList.get(index).isFail();
                 Log.e("tag_fileName", fileName + "");
                 if (videoEntityList.size() > 1) {
                     upVideo(false);
@@ -83,48 +96,172 @@ public class UpLoadVideoFileService extends Service {
             } else if (activityEventBean.getEvent() == 2) {//暂停
                 Log.e("tag_stop", "暂停");
                 ftpUtils.stop();
-            } else if(activityEventBean.getEvent() == 3){//无网络
-                stopForeground(true);
-                stopSelf();
+            } else if (activityEventBean.getEvent() == 3) {//无网络
+                ftpUtils.abort();
+                videoEntityList.get(index).setFail(true);
+            } else if (activityEventBean.getEvent() == 4) {//重新上传
+//                VideoEntity videoEntity = activityEventBean.getVideoEntityList().get(0);
+//                if (videoEntity != null) {
+                    if (videoEntityList != null) {
+                        if (videoEntityList.size() > 0) {
+                            videoEntityList.addAll(activityEventBean.getVideoEntityList());
+                        } else {
+                            videoEntityList.addAll(activityEventBean.getVideoEntityList());
+                        }
+                    }
+//                }
+                Log.e("tag_video", videoEntityList.toString() + "");
+                App.upCount = videoEntityList.size();
+                if (!activityEventBean.isUp()) {//正在上传任务，
+                    upLoadFileName = videoEntityList.get(index).getPath();
+                    size = videoEntityList.get(index).getLen();
+                    fileName = videoEntityList.get(index).getTitle();
+                    duration = videoEntityList.get(index).getDuration();
+                    intDuration = videoEntityList.get(index).getLongDuration();
+                    isFail = videoEntityList.get(index).isFail();
+                    thumb = videoEntityList.get(index).getThumbPath();
+                    Log.e("tag_fileName", fileName + "");
+                    FromServiceEventBean fromServiceEventBean = new FromServiceEventBean();
+                    fromServiceEventBean.setEvent(3);
+                    fromServiceEventBean.setPoi(index);
+                    EventBus.getDefault().post(fromServiceEventBean);
+                    if (videoEntityList.size() > 1) {
+                        upVideo(false);
+                    } else {
+                        upVideo(true);
+                    }
+                }
+//                if(App.upCount == 0){//已经没有上传任务了
+//                    upLoadNextVideo(false);
+//
+//                }
+            } else if (activityEventBean.getEvent() == 5) {//添加上传任务
+                if (activityEventBean.getVideoEntityList() != null && activityEventBean.getVideoEntityList().size() > 0) {
+                    videoEntityList.addAll(activityEventBean.getVideoEntityList());
+                    List<VideoEntity> temp = removeDuplicteUsers(videoEntityList);
+                    videoEntityList.clear();
+                    videoEntityList.addAll(temp);
+                    Log.e("tag_all", videoEntityList.toString() + "");
+                    App.upCount = videoEntityList.size();
+                    if (!App.isRunning) {//正在上传任务，
+                        upLoadFileName = videoEntityList.get(index).getPath();
+                        size = videoEntityList.get(index).getLen();
+                        fileName = videoEntityList.get(index).getTitle();
+                        duration = videoEntityList.get(index).getDuration();
+                        intDuration = videoEntityList.get(index).getLongDuration();
+                        isFail = videoEntityList.get(index).isFail();
+                        thumb = videoEntityList.get(index).getThumbPath();
+                        Log.e("tag_fileName", fileName + "");
+                        FromServiceEventBean fromServiceEventBean = new FromServiceEventBean();
+                        fromServiceEventBean.setEvent(3);
+                        fromServiceEventBean.setPoi(index);
+                        EventBus.getDefault().post(fromServiceEventBean);
+                        if (videoEntityList.size() > 1) {
+                            upVideo(false);
+                        } else {
+                            upVideo(true);
+                        }
+                    }
+                }
             }
             notificationManager.notify(1, notification);
         }
     }
 
+    public static ArrayList<VideoEntity> removeDuplicteUsers(List<VideoEntity> userList) {
+        Set<VideoEntity> s = new TreeSet<VideoEntity>(new Comparator<VideoEntity>() {
+
+            @Override
+            public int compare(VideoEntity o1, VideoEntity o2) {
+                return o1.getTitle().compareTo(o2.getTitle());
+            }
+        });
+        s.addAll(userList);
+        return new ArrayList<VideoEntity>(s);
+    }
+
+    private VideoEntity findVideo(String fileName) {
+        for (VideoEntity videoEntity : failVideo) {
+            if (fileName.equals(videoEntity.getTitle())) {
+                return videoEntity;
+            }
+        }
+        return null;
+    }
+
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void upLoadingMethod(UpLoadingBean bean) {
+//        if (bean != null) {
+//            notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+//            notification.contentView.setProgressBar(R.id.pro, 100, bean.getProgress(), false);
+//            notificationManager.notify(1, notification);
+//        }
+//    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void fromUpLoadEvent(FromUploadBean fromUploadEventBean) {
-        if (fromUploadEventBean != null) {
-            if (fromUploadEventBean.getType() == 1) {//等待中
-                VideoUpInfoBean.VideoBean videoBean = new VideoUpInfoBean.VideoBean();
-                videoBean.setFile_name(fileName);
-                EventBus.getDefault().post(videoBean);
-                notification.contentView.setTextViewText(R.id.tv_start, "等待中");
-                clickStatus = 0;
-                notificationManager.notify(1, notification);
-            } else if (fromUploadEventBean.getType() == 2) {//开始
-                notification.contentView.setTextViewText(R.id.tv_start, "暂停");
-                notification.contentView.setProgressBar(R.id.pro, 100, fromUploadEventBean.getProgress(), false);
-                notificationManager.notify(1, notification);
-            } else if (fromUploadEventBean.getType() == 3) {//连接失败
-            } else if (fromUploadEventBean.getType() == 4) {//本地文件不存在
-                App.upCount--;
-            } else if (fromUploadEventBean.getType() == 5) {//暂停
-            } else if (fromUploadEventBean.getType() == 6) {//上传中
-                notification.contentView.setTextViewText(R.id.tv_start, "暂停");
-                notification.contentView.setProgressBar(R.id.pro, 100, fromUploadEventBean.getProgress(), false);
-                notificationManager.notify(1, notification);
-            } else if (fromUploadEventBean.getType() == 7) {//上传失败
-                upLoadNextVideo();
-            } else if (fromUploadEventBean.getType() == 8) {//上传完成
-                App.upCount--;
-                new Thread() {
-                    @Override
-                    public void run() {
-                        super.run();
-                        upInfo();
+        try {
+            if (fromUploadEventBean != null) {
+                if (fromUploadEventBean.getType() == 1) {//等待中
+                    notification.contentView.setTextViewText(R.id.tv_start, "等待中");
+                    clickStatus = 0;
+                    notificationManager.notify(1, notification);
+                } else if (fromUploadEventBean.getType() == 2) {//开始
+                    notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+                    notification.contentView.setProgressBar(R.id.pro, 100, fromUploadEventBean.getProgress(), false);
+                    notificationManager.notify(1, notification);
+                } else if (fromUploadEventBean.getType() == 3) {//连接失败
+                    App.upCount--;
+                    VideoEntity videoEntity = videoEntityList.get(index);
+                    if (videoEntity != null) {
+                        failVideo.add(videoEntity);
                     }
-                }.start();
+                    upLoadNextVideo(true);
+                } else if (fromUploadEventBean.getType() == 4) {//本地文件不存在
+                    App.upCount--;
+                } else if (fromUploadEventBean.getType() == 5) {//暂停
+                } else if (fromUploadEventBean.getType() == 6) {//上传中
+                    notification.contentView.setTextViewText(R.id.tv_start, "暂停");
+                    notification.contentView.setProgressBar(R.id.pro, 100, fromUploadEventBean.getProgress(), false);
+                    notificationManager.notify(1, notification);
+                } else if (fromUploadEventBean.getType() == 7) {//上传失败
+                    VideoEntity videoEntity = videoEntityList.get(index);
+                    if (videoEntity != null) {
+                        failVideo.add(videoEntity);
+                    }
+                    App.upCount--;
+                    upLoadNextVideo(true);
+                } else if (fromUploadEventBean.getType() == 8) {//上传完成
+                    App.upCount--;
+                    updateVideo(fileName);
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            super.run();
+                            upInfo();
+                        }
+                    }.start();
+                } else if (fromUploadEventBean.getType() == 9) {//删除服务器文件
+                    videoEntityList.get(index).setFail(false);
+                    isFail = false;
+                } else if (fromUploadEventBean.getType() == 10) {//已经上传过了
+                    App.upCount--;
+                    upLoadNextVideo(false);
+                } else if (fromUploadEventBean.getType() == 11) {
+                    VideoEntity videoEntity = videoEntityList.get(index);
+                    if (videoEntity != null) {
+                        failVideo.add(videoEntity);
+                    }
+                    videoEntityList.remove(index);
+                    App.upCount--;
+                    if (videoEntityList.size() == 0) {
+                        stopForeground(true);
+                        stopSelf();
+                    }
+//                    upLoadNextVideo(true);
+                }
             }
+        } catch (Exception e) {
         }
     }
 
@@ -136,7 +273,6 @@ public class UpLoadVideoFileService extends Service {
         initData();
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         buildNotify();
-        Log.e("tag_onCreate","onCreate");
     }
 
     private void initData() {
@@ -144,7 +280,7 @@ public class UpLoadVideoFileService extends Service {
         ftpUtils = new FtpUtils();
         sharedPreferencesUtils = new SharedPreferencesUtils(this);
         VideoTotalEntity stickyEvent = EventBus.getDefault().getStickyEvent(VideoTotalEntity.class);
-        if (stickyEvent != null) {
+        if (stickyEvent != null && stickyEvent.getVideoEntities().size() > 0) {
             App.upCount = stickyEvent.getVideoEntities().size();
             videoSize = stickyEvent.getVideoEntities().size();
             upLoadFileName = stickyEvent.getVideoEntities().get(0).getPath();
@@ -153,6 +289,7 @@ public class UpLoadVideoFileService extends Service {
             duration = stickyEvent.getVideoEntities().get(0).getDuration();
             intDuration = stickyEvent.getVideoEntities().get(0).getLongDuration();
             thumb = stickyEvent.getVideoEntities().get(0).getThumbPath();
+            isFail = stickyEvent.getVideoEntities().get(0).isFail();
             Log.e("tag_fileName", fileName + "");
             videoEntityList = stickyEvent.getVideoEntities();
             index = 0;
@@ -165,9 +302,9 @@ public class UpLoadVideoFileService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e("tag_onStartCommand","onStartCommand");
+        Log.e("tag_onStartCommand", "onStartCommand");
         clickStatus = 1;//初始化状态为暂停
-        if(videoEntityList != null){
+        if (videoEntityList != null) {
             if (videoEntityList.size() > 1) {
                 upVideo(false);
             } else {
@@ -247,24 +384,24 @@ public class UpLoadVideoFileService extends Service {
 
 
     private void upInfo() {
-        volleyUtils.upVideoInfo(fileName, ConstantUtils.SERVERPATH + fileName + ".mp4", sharedPreferencesUtils.getString(ConstantUtils.USER_ID), size, String.valueOf(intDuration), thumb, new VolleyUtils.OnVolleyListener() {
+        volleyUtils.upVideoInfo(fileName+ ".mp4", ConstantUtils.SERVERPATH + fileName + ".mp4", sharedPreferencesUtils.getString(ConstantUtils.USER_ID), size, String.valueOf(intDuration), upLoadFileName, new VolleyUtils.OnVolleyListener() {
             @Override
             public void onResponse(String response) {
                 Log.e("tag_onResponse", response);
                 VideoUpInfoBean.VideoBean videoBean = new VideoUpInfoBean.VideoBean();
                 videoBean.setFile_name(fileName);
+                videoBean.setType(1);
                 EventBus.getDefault().post(videoBean);
                 //通知是否还有文件上传
-                V  v =  new  V();
+                V v = new V();
                 v.setFileName(fileName);
                 EventBus.getDefault().post(v);
-                upLoadNextVideo();
+                upLoadNextVideo(false);
             }
 
             @Override
             public void onErrorResponse(VolleyError error) {
-//                Log.e("tag_onErrorResponse", error.getMessage());
-                upLoadNextVideo();
+                upLoadNextVideo(false);
             }
         });
     }
@@ -272,15 +409,18 @@ public class UpLoadVideoFileService extends Service {
     /*
     上传下一个视频
      */
-    private void upLoadNextVideo() {
+    private void upLoadNextVideo(boolean upFail) {
         if (videoEntityList != null) {
             if (index != videoEntityList.size() - 1) {
-                videoEntityList.remove(index);
+                if (videoEntityList != null && videoEntityList.size() > 0) {
+                    VideoEntity videoEntity = videoEntityList.remove(index);
+                }
                 upLoadFileName = videoEntityList.get(index).getPath();
                 size = videoEntityList.get(index).getLen();
                 fileName = videoEntityList.get(index).getTitle();
                 duration = videoEntityList.get(index).getDuration();
                 intDuration = videoEntityList.get(index).getLongDuration();
+                isFail = videoEntityList.get(index).isFail();
                 thumb = videoEntityList.get(index).getThumbPath();
                 Log.e("tag_fileName", fileName + "");
                 FromServiceEventBean fromServiceEventBean = new FromServiceEventBean();
@@ -292,8 +432,10 @@ public class UpLoadVideoFileService extends Service {
                 } else {
                     upVideo(true);
                 }
-            }else{
-                Log.e("tag_stop","stopSelf");
+            } else {
+//                new CacheUtils().init().remove("v");
+                sharedPreferencesUtils.clear("v");
+                Log.e("tag_stop", "stopSelf");
                 stopForeground(true);
                 stopSelf();
             }
@@ -306,7 +448,42 @@ public class UpLoadVideoFileService extends Service {
             @Override
             public void run() {
                 super.run();
-                ftpUtils.upLoad(upLoadFileName, fileName, index, isClose);
+                int status = ftpUtils.upLoad(upLoadFileName, fileName, index, isClose, isFail);
+                Log.e("tag_status", status + "");
+                if (status == 2) {
+                    ftpUtils.upLoad(upLoadFileName, fileName, index, isClose, isFail);
+                }
+            }
+        }.start();
+    }
+
+    /*
+    更新正在上传的视频缓存
+     */
+    private void updateVideo(final String fileName) {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    super.run();
+                    String info = sharedPreferencesUtils.getString("v");
+                    if (info != null && !info.equals("")) {
+                        VideoTotalEntity videoTotalEntity = new Gson().fromJson(info, VideoTotalEntity.class);
+                        if (videoTotalEntity != null && videoTotalEntity.getVideoEntities().size() > 0) {
+                            for (int i = 0; i < videoTotalEntity.getVideoEntities().size(); i++) {
+                                if (fileName.equals(videoTotalEntity.getVideoEntities().get(i).getTitle())) {
+                                    videoTotalEntity.getVideoEntities().remove(i);
+                                    break;
+                                }
+                            }
+                        }
+                        if (videoTotalEntity != null && videoTotalEntity.getVideoEntities().size() != 0) {
+                            String in = new Gson().toJson(videoTotalEntity);
+                            sharedPreferencesUtils.putString("v",in);
+                        }
+                    }
+                } catch (Exception e) {
+                }
             }
         }.start();
     }

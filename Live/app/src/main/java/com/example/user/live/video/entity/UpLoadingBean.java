@@ -1,5 +1,7 @@
 package com.example.user.live.video.entity;
 
+import android.support.v4.util.Pools;
+
 /**
  * Created by user on 2018/6/19.
  */
@@ -33,6 +35,18 @@ public class UpLoadingBean {
 
     public void setProgress(int progress) {
         this.progress = progress;
+    }
+
+
+    private static  final Pools.SynchronizedPool<UpLoadingBean>  upLoadInstance = new Pools.SynchronizedPool<>(10);
+
+    public static UpLoadingBean obtain(){
+        UpLoadingBean instance = upLoadInstance.acquire();
+        return (instance != null) ? instance : new UpLoadingBean();
+    }
+
+    public void  recycle(){
+        upLoadInstance.release(this);
     }
 
 

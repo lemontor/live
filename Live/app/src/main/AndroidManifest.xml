@@ -30,6 +30,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
         android:name=".app.App"
@@ -38,7 +39,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:persistent="true">
+        android:persistent="true"
+        android:hardwareAccelerated="true">
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,7 +68,8 @@
         <activity android:name=".video.VideoUpLoad"/>
         <!--<service android:name=".video.UpLoadService"/>-->
         <service android:name=".video.UpVideoFileService"/>
-        <activity android:name=".video.upload.VideoUpLoadActivity"/>
+        <activity android:name=".video.upload.VideoUpLoadActivity"
+            android:launchMode="singleTask"/>
         <service android:name=".video.upload.UpLoadVideoFileService"/>
         <activity android:name=".live.LiveDetailsActivity"/>
 

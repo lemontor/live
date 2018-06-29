@@ -230,6 +230,11 @@ public class VideoUpLoad extends Activity implements View.OnClickListener {
                 }
 
             }
+
+            @Override
+            public void onNetChange(int type, int position, int status) {
+
+            }
         });
         lvLoading.setAdapter(videoUpAdapter);
         tvSet.setOnClickListener(this);

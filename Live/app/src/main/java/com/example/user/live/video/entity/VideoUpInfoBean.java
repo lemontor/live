@@ -48,6 +48,15 @@ public class VideoUpInfoBean {
         private  String  video_cloud_id;
         private  String  show_size;
         private  String  pic_url;
+        private  int     type;
+
+        public int getType() {
+            return type;
+        }
+
+        public void setType(int type) {
+            this.type = type;
+        }
 
         public VideoBean() {
         }

@@ -1,8 +1,11 @@
 package com.example.user.live.video.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.media.ThumbnailUtils;
 import android.os.Build;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,11 +30,22 @@ public class VideoFinishAdapter extends BaseAdapter{
     private List<VideoEntity> entityList;
     private Context context;
     private LayoutInflater inflater;
+    static int mGridWidth;
 
     public VideoFinishAdapter(Context context, List<VideoEntity>  entityList){
         this.context = context;
         this.entityList = entityList;
         inflater = LayoutInflater.from(context);
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int width = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            Point size = new Point();
+            wm.getDefaultDisplay().getSize(size);
+            width = size.x;
+        } else {
+            width = wm.getDefaultDisplay().getWidth();
+        }
+        mGridWidth = width / 4;
     }
 
 
@@ -60,7 +74,9 @@ public class VideoFinishAdapter extends BaseAdapter{
         }else{
             viewHolderPic = (ViewHolderPic) view.getTag();
         }
-        GlideUtils.loadLocalPic(context,entityList.get(i).getThumbPath(),viewHolderPic.ivPic);
+        GlideUtils.loadLocalPic(context,entityList.get(i).getPath(),viewHolderPic.ivPic);
+//        viewHolderPic.ivPic.setImageBitmap(getVideoThumbnail(entityList.get(i).getPath(),mGridWidth,mGridWidth, MediaStore.Video.Thumbnails.MINI_KIND));
+
         viewHolderPic.tvTitle.setText(entityList.get(i).getTitle());
         viewHolderPic.tvSize.setText(entityList.get(i).getSize());
         viewHolderPic.tvLen.setText(entityList.get(i).getDuration());
@@ -74,7 +90,16 @@ public class VideoFinishAdapter extends BaseAdapter{
         return view;
     }
 
-
+    public static Bitmap getVideoThumbnail(String videoPath, int width, int height, int kind) {
+        Bitmap bitmap = null;
+        // 获取视频的缩略图
+        bitmap = ThumbnailUtils.createVideoThumbnail(videoPath, kind);
+        if(bitmap!= null){
+            bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height,
+                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+        }
+        return bitmap;
+    }
 
     static class ViewHolderPic{
         private ImageView ivPic;

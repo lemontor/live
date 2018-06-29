@@ -57,8 +57,8 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout  mLayoutContent;
     private WebView  mWebView;
 //    String targetUrl = "http://210.12.56.75:8777/mobile/index.html";
-    String targetUrl = "http://210.12.56.75:8266/mobile/index.html";
-//    String targetUrl = "http://study.huatec.com/mobile/index.html";
+//    String targetUrl = "http://210.12.56.75:8266/mobile/index.html";
+    String targetUrl = "http://study.huatec.com/mobile/index.html";
     private SharedPreferencesUtils sharedPreferencesUtils;
     private String[] permissions = {android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private List<String> mPermissionList;

@@ -1,10 +1,16 @@
 package com.example.user.live.video.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.media.ThumbnailUtils;
+import android.os.Build;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,11 +30,22 @@ public class VideoUpedAdapter extends BaseAdapter{
     private List<VideoUpInfoBean.VideoBean> entityList;
     private Context context;
     private LayoutInflater inflater;
+    static int mGridWidth;
 
     public VideoUpedAdapter(Context context, List<VideoUpInfoBean.VideoBean>  entityList){
         this.context = context;
         this.entityList = entityList;
         inflater = LayoutInflater.from(context);
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int width = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            Point size = new Point();
+            wm.getDefaultDisplay().getSize(size);
+            width = size.x;
+        } else {
+            width = wm.getDefaultDisplay().getWidth();
+        }
+        mGridWidth = width / 4;
     }
 
 
@@ -57,7 +74,9 @@ public class VideoUpedAdapter extends BaseAdapter{
         }else{
             viewHolderPic = (ViewHolderPic) view.getTag();
         }
-        GlideUtils.loadLocalPic(context,entityList.get(i).getPic_url(),viewHolderPic.ivPic);
+        GlideUtils.loadLocalPic(context,entityList.get(i).getPath(),viewHolderPic.ivPic);
+//        viewHolderPic.ivPic.setImageBitmap(getVideoThumbnail(entityList.get(i).getPath(),mGridWidth,mGridWidth, MediaStore.Video.Thumbnails.MINI_KIND));
+
         viewHolderPic.tvTitle.setText(entityList.get(i).getFile_name());
         viewHolderPic.tvSize.setText(entityList.get(i).getShow_size());
         viewHolderPic.tvLen.setText(getTime(entityList.get(i).getVideo_time()));
@@ -66,8 +85,18 @@ public class VideoUpedAdapter extends BaseAdapter{
     }
 
 
+    public static Bitmap getVideoThumbnail(String videoPath, int width, int height, int kind) {
+        Bitmap bitmap = null;
+        // 获取视频的缩略图
+        bitmap = ThumbnailUtils.createVideoThumbnail(videoPath, kind);
+        if(bitmap!= null){
+            bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height,
+                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+        }
+        return bitmap;
+    }
+
     public static String getTime(int second) {
-        Log.e("tag_getTime",second+"");
         if (second > 60) {
             int minte = second / 60;
             int tempSecond = second % 60;
